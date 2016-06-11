@@ -14,7 +14,8 @@ def image_search(text):
     # remove '
     text = text.replace("'", ' ')
     url = ("https://api.datamarket.azure.com/Bing/Search/v1/Composite" +
-           "?Sources=%27image%27&Query=%27{text}%27&$format=json")
+           "?Sources=%27image%27&Query=%27{text}%27&Adult=%27Off%27" +
+           "&$format=json")
     url = url.format(text=urllib.parse.quote_plus(text))
 
     try:
