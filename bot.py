@@ -33,7 +33,6 @@ class StreamWatcherListener(StreamListener):
 
         # favourite his mention and then follow him if he's new
         if not status.author.following:
-            api.create_favorite(status.id)
             api.create_friendship(status.author.screen_name)
 
         text, image = parse(status.text)
