@@ -31,6 +31,11 @@ class StreamWatcherListener(StreamListener):
                     p_file.write(utils.clean(status.text, urls=True) + '\n')
             return
 
+        # favourite his mention and then follow him if he's new
+        if not status.author.following:
+            api.create_favorite(status.id)
+            api.create_friendship(status.author.screen_name)
+
         text, image = parse(status.text)
 
         # parser determined there's nothing to do about this status,
