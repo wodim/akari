@@ -1,6 +1,7 @@
 from hashlib import md5
 import json
 import os
+import random
 import requests
 import socket
 import urllib
@@ -38,6 +39,7 @@ def image_search(text):
         raise Exception('Me he quedado sin gasolina.')
 
     if len(results) > 0:
+        random.shuffle(results)
         for result in results:
             image_url = result['MediaUrl']
             source_url = result['SourceUrl']
