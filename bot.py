@@ -55,11 +55,11 @@ class StreamWatcherListener(StreamListener):
         # don't catch exceptions. in this case, it's better to let it crash
         # so the stream reconnects
         if image:
-            reply = utils.ellipsis(reply, 116)
+            reply = utils.ellipsis(reply, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
             api.update_with_media(image, status=reply,
                                   in_reply_to_status_id=status.id)
         else:
-            reply = utils.ellipsis(reply, 140)
+            reply = utils.ellipsis(reply, utils.MAX_STATUS_LENGTH)
             api.update_status(reply, in_reply_to_status_id=status.id)
 
     def on_error(self, status_code):

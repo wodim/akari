@@ -16,11 +16,13 @@ def image_search(text):
     text = text.replace("'", ' ')
     url = ("https://api.datamarket.azure.com/Bing/Search/v1/Composite" +
            "?Sources=%27image%27&Query=%27{text}%27&Adult=%27Off%27" +
-           "&$format=json")
-    url = url.format(text=urllib.parse.quote_plus(text))
+           "&Market=%27{market}%27&$format=json")
+    url = url.format(text=urllib.parse.quote_plus(text),
+                     market=config['bing']['market'])
 
     try:
-        response = session.get(url, auth=('', config['bing']['api_key']))
+        api_key = random.choice(config['bing']['api_keys'])
+        response = session.get(url, auth=('', api_key))
     except (requests.exceptions.RequestException, socket.timeout) as e:
         raise Exception('Error al hacer la petición HTTP')
 

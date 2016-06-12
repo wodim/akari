@@ -7,6 +7,12 @@
         "screen_name": "akari_endlosung"
     },
     "bing": {
-        "api_key": ""
+        "api_keys": [""],
+        "market": "es-ES"
+    },
+    "akari": {
+        "min_line_length": 10,
+        "min_words": 1,
+        "max_words": 10
     }
 }

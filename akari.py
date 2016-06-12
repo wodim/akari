@@ -8,8 +8,10 @@ from wand.color import Color
 from wand.drawing import Drawing
 from wand.image import Image
 
+from config import config
 from image_search import image_search
 from twitter import api
+import utils
 
 
 def akari_compose(filename, caption):
@@ -62,19 +64,21 @@ def akari_search(text):
 def akari_cron():
     # get a random line. will error out if there are none, which is okay.
     with open('pending.txt') as file:
-        lines = [x for x in file.read().splitlines() if len(x) > 10]
+        min_len = config['akari']['min_line_length']
+        lines = [x for x in file.read().splitlines() if len(x) > min_len]
         if not lines:
             return
         line = random.choice(lines)
 
-    min, max = 1, 6
+    min, max = config['akari']['min_words'], config['akari']['max_words']
     words = line.split(' ')
     start = random.randint(0, len(words) - 1)
     length = random.randint(min, max)
 
     text = ' '.join(words[start:start + length])
     filename, caption = akari_search(text)
-    api.update_with_media(filename, status=caption)
+    status = utils.ellipsis(caption, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
+    api.update_with_media(filename, status=status)
 
     # empty the file
     with open('pending.txt', 'w'):
@@ -83,4 +87,5 @@ def akari_cron():
 # like akari_cron(), but it forces a certain caption to be published
 def akari_publish(text):
     filename, caption = akari_search(text)
-    api.update_with_media(filename, status=caption)
+    status = utils.ellipsis(caption, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
+    api.update_with_media(filename, status=status)

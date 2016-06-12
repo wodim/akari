@@ -1,6 +1,9 @@
 from html import unescape
 import re
 
+MAX_STATUS_LENGTH = 140
+MAX_STATUS_WITH_MEDIA_LENGTH = 116
+
 
 def clean(text, replies=True, hashtags=False, rts=True, urls=False):
     text = text.replace('\n', ' ')
