@@ -74,9 +74,13 @@ def akari_cron():
 
     text = ' '.join(words[start:start + length])
     filename, caption = akari_search(text)
-
     api.update_with_media(filename, status=caption)
 
     # empty the file
     with open('pending.txt', 'w'):
         pass
+
+# like akari_cron(), but it forces a certain caption to be published
+def akari_publish(text):
+    filename, caption = akari_search(text)
+    api.update_with_media(filename, status=caption)
