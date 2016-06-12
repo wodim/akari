@@ -37,7 +37,7 @@ def akari_compose(filename, caption):
     draw.fill_color = Color('#fff')
     draw.stroke_color = Color('#000')
     draw.gravity = 'south'
-    draw.text(0, 0, fill(caption, akari_mask.width // 32))
+    draw.text(0, 0, fill(caption, akari_mask.width // 35))
     draw(img)
 
     # and save
