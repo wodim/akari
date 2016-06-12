@@ -35,7 +35,7 @@ def akari_compose(filename, caption):
     draw.fill_color = Color('#fff')
     draw.stroke_color = Color('#000')
     draw.gravity = 'south'
-    draw.text(0, 0, fill(caption, 23))
+    draw.text(0, 0, fill(caption, akari_mask.width // 32))
     draw(img)
 
     # and save
@@ -55,7 +55,7 @@ def akari_search(text):
     except:
         raise
 
-    caption = 'わぁい{0} あかり{1}大好き'.format(text, text)
+    caption = 'わぁい{0} あかり{0}大好き'.format(text)
     return akari_compose(filename, caption)
 
 
@@ -67,12 +67,12 @@ def akari_cron():
             return
         line = random.choice(lines)
 
-    min, max = 1, 5
+    min, max = 1, 6
     words = line.split(' ')
     start = random.randint(0, len(words) - 1)
     length = random.randint(min, max)
 
-    text = ' '.join(words[start:start+length])
+    text = ' '.join(words[start:start + length])
     filename, caption = akari_search(text)
 
     api.update_with_media(filename, status=caption)
