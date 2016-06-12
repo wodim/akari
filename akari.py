@@ -53,7 +53,7 @@ def akari_compose(filename, caption):
 
 def akari_search(text):
     try:
-        filename, source_url = image_search(text)
+        filename, source_url = image_search(text, max_size=10 * 1024 * 1024)
     except:
         raise
 

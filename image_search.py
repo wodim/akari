@@ -9,7 +9,7 @@ import urllib
 from config import config
 
 
-def image_search(text):
+def image_search(text, max_size=3072 * 1024):
     session = requests.session()
 
     # remove '
@@ -41,22 +41,27 @@ def image_search(text):
         raise Exception('Me he quedado sin gasolina.')
 
     if len(results) > 0:
+        # shuffle the results
         random.shuffle(results)
         for result in results:
             image_url = result['MediaUrl']
             source_url = result['SourceUrl']
             mimetype = result['ContentType']
 
-            if 'desmotivaciones.es' in source_url:
+            # check if the source is banned and, in that case, ignore it
+            if any(x in source_url for x in config['bing']['banned_sources']):
                 continue
 
             session = requests.session()
             try:
+                # fake the referrer
                 response = session.get(image_url,
                                        headers={'Referer': source_url})
             except (requests.exceptions.RequestException, socket.timeout) as e:
+                # if the download times out, try with the next result
                 continue
 
+            # if the download fails (404, ...), try with the next result
             if response.status_code != requests.codes.ok:
                 continue
 
@@ -70,12 +75,12 @@ def image_search(text):
                     handle.write(block)
                 handle.close()
 
+            # if it's not an image (referrer trap, catch-all html 404...)
+            # or if it's too big, try with the next result
             if (not mimetype.startswith('image/') or
-                    os.stat(filename).st_size > 3072 * 1024):
+                    os.stat(filename).st_size > max_size):
                 continue
 
-            break
-
-        return filename, source_url
+            return filename, source_url
     else:
         raise Exception('No hay resultados para "{}".'.format(text))
