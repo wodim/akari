@@ -52,11 +52,7 @@ def akari_compose(filename, caption):
 
 
 def akari_search(text):
-    try:
-        filename, source_url = image_search(text, max_size=10 * 1024 * 1024)
-    except:
-        raise
-
+    filename, source_url = image_search(text, max_size=10 * 1024 * 1024)
     caption = 'わぁい{0} あかり{0}大好き'.format(text)
     return akari_compose(filename, caption)
 
@@ -70,19 +66,31 @@ def akari_cron():
             return
         line = random.choice(lines)
 
-    min, max = config['akari']['min_words'], config['akari']['max_words']
-    words = line.split(' ')
-    start = random.randint(0, len(words) - 1)
-    length = random.randint(min, max)
+    def new_caption():
+        min, max = config['akari']['min_words'], config['akari']['max_words']
+        words = line.split(' ')
+        start = random.randint(0, len(words) - 1)
+        length = random.randint(min, max)
 
-    text = ' '.join(words[start:start + length])
-    filename, caption = akari_search(text)
+        return ' '.join(words[start:start + length])
+
+    # try to generate a new caption a few times before giving up
+    for i in range(10):
+        try:
+            filename, caption = akari_search(new_caption())
+        except:
+            continue
+
+    # this will crash it there's no caption available thus far, that's fine,
+    # as the amount of tries has been exceeded and there was nothing left to do
+    # anyway.
     status = utils.ellipsis(caption, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
     api.update_with_media(filename, status=status)
 
     # empty the file
     with open('pending.txt', 'w'):
         pass
+
 
 # like akari_cron(), but it forces a certain caption to be published
 def akari_publish(text):
