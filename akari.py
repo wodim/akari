@@ -63,18 +63,27 @@ def akari_cron():
         min_len = config['akari']['min_line_length']
         lines = [x for x in file.read().splitlines() if len(x) > min_len]
         if not lines:
+            # return if there is nothing useful in the queue yet.
             return
-        line = random.choice(lines)
 
     def new_caption():
+        # try to generate a new caption of at least 10 characters at least
+        # 10 times before giving up and letting anything through
         min, max = config['akari']['min_words'], config['akari']['max_words']
+        line = random.choice(lines)
         words = line.split(' ')
-        start = random.randint(0, len(words) - 1)
-        length = random.randint(min, max)
+        for i in range(10):
+            start = random.randint(0, len(words) - 1)
+            length = random.randint(min, max)
+            text = ' '.join(words[start:start + length])
 
-        return ' '.join(words[start:start + length])
+            if len(text) >= 10:
+                break
 
-    # try to generate a new caption a few times before giving up
+        return text
+
+    # generate a new caption and try to find an image for it 10 times before
+    # giving up
     for i in range(10):
         try:
             filename, caption = akari_search(new_caption())
@@ -87,7 +96,7 @@ def akari_cron():
     status = utils.ellipsis(caption, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
     api.update_with_media(filename, status=status)
 
-    # empty the file
+    # if a new caption has been successfully published, empty the file
     with open('pending.txt', 'w'):
         pass
 
