@@ -15,9 +15,11 @@ class StreamException(Exception):
 
 class StreamWatcherListener(StreamListener):
     def on_status(self, status):
-        print(('"%s" -- %s via %s' % (status.text,
-                                      status.author.screen_name,
-                                      status.source)))
+        utils.logger.info('{id} - "{text}" by {screen_name} via {source}'
+                          .format(id=status.id,
+                                  text=utils.clean(status.text),
+                                  screen_name=status.author.screen_name,
+                                  source=status.source))
 
         # ignore yourself
         if status.author.screen_name == config['twitter']['screen_name']:
@@ -28,7 +30,9 @@ class StreamWatcherListener(StreamListener):
             if not hasattr(status, 'retweeted_status'):
                 # if it is not a retweet store this status
                 with open('pending.txt', 'a') as p_file:
-                    p_file.write(utils.clean(status.text, urls=True) + '\n')
+                    text = utils.clean(status.text, urls=True, replies=True,
+                                       rts=True)
+                    p_file.write(text + '\n')
             return
 
         # ignore retweets
@@ -63,7 +67,8 @@ class StreamWatcherListener(StreamListener):
             api.update_status(reply, in_reply_to_status_id=status.id)
 
     def on_error(self, status_code):
-        print(('An error has occured! Status code = %s' % status_code))
+        utils.logger.warning('An error has occured! Status code = {}'
+                             .format(status_code))
         return True  # keep stream alive
 
     def on_timeout(self):

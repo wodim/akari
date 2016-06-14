@@ -1,11 +1,27 @@
 from html import unescape
+import logging
 import re
 
 MAX_STATUS_LENGTH = 140
 MAX_STATUS_WITH_MEDIA_LENGTH = 116
 
 
-def clean(text, replies=True, hashtags=False, rts=True, urls=False):
+class Logger(object):
+
+    def __init__(self):
+        logging.basicConfig(format='%(asctime)s: %(message)s',
+                            datefmt='%Y-%m-%d %H:%M:%S',
+                            level=logging.INFO)
+        self.logger = logging.getLogger('akari_endlosung')
+
+    def get_logger(self):
+        return self.logger
+
+logger = Logger().get_logger()
+logger.info('Logger initialised.')
+
+
+def clean(text, replies=False, hashtags=False, rts=False, urls=False):
     text = text.replace('\n', ' ')
     text = text.replace('\r', ' ')
     text = unescape(text)

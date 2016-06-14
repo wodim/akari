@@ -1,5 +1,3 @@
-import random
-
 import tweepy
 
 from twitter import api

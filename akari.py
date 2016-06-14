@@ -87,6 +87,7 @@ def akari_cron():
     for i in range(10):
         try:
             filename, caption = akari_search(new_caption())
+            break
         except:
             continue
 
