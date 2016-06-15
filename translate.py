@@ -2,42 +2,47 @@ import html
 import json
 import requests
 import socket
-import urllib
+
+import utils
 
 
-def translate(text, language):
-    session = requests.session()
-    url = ('http://mymemory.translated.net/api/ajaxfetch?q={text}' +
-           '&langpair=es-ES|{lang}&mtonly=1')
-    url = url.format(text=urllib.parse.quote_plus(text), lang=language)
+def translate(text, lang_to, lang_from='es-ES'):
+    url = 'http://mymemory.translated.net/api/ajaxfetch'
+    params = {'q': text, 'langpair': '{}|{}'.format(lang_from, lang_to),
+              'mtonly': '1'}
 
     try:
-        response = session.get(url)
+        response = requests.get(url, params)
     except (requests.exceptions.RequestException, socket.timeout) as e:
         raise Exception('Error al hacer la petición HTTP')
 
     try:
         decoded_json = json.loads(response.text)
     except:
+        utils.logger.warning('translate(): api response can not be decoded')
         raise Exception('Error al decodificar el JSON.')
 
     translation = decoded_json['responseData']['translatedText']
 
     if decoded_json['responseStatus'] != 200:
         if 'IS AN INVALID TARGET LANGUAGE' in translation:
-            raise Exception('El idioma que has elegido, "{}", no es válido.'
-                            .format(language))
+            utils.logger.warning('translate(): incorrect language ({})'
+                                 .format(decoded_json['responseStatus']))
+            raise Exception('El idioma que has elegido no es válido.')
         else:
+            utils.logger.warning('translate(): response code not ok ({})'
+                                 .format(decoded_json['responseStatus']))
             raise Exception('Error al traducir.')
 
     if len(translation.strip()) == 0:
-        raise Exception('El idioma "{}" no está soportado.'
-                        .format(language))
+        utils.logger.warning('translate(): unsupported language')
+        raise Exception('El idioma no está soportado.')
 
     try:
         translation = decoded_json['responseData']['translatedText']
         translation = html.unescape(translation)
     except:
+        utils.logger.warning('translate(): api response can not be parsed')
         raise Exception('No va bien el tema.')
 
     translation = translation.replace('@ ', '@')

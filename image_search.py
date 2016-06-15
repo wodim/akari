@@ -4,7 +4,6 @@ import os
 import random
 import requests
 import socket
-import urllib
 
 from config import config
 import utils
@@ -15,16 +14,16 @@ def image_search(text, max_size=3072 * 1024):
 
     # remove '
     text = text.replace("'", ' ')
-    url = ("https://api.datamarket.azure.com/Bing/Search/v1/Composite" +
-           "?Sources=%27image%27&Query=%27{text}%27&Adult=%27Off%27" +
-           "&Market=%27{market}%27&$format=json")
-    url = url.format(text=urllib.parse.quote_plus(text),
-                     market=config['bing']['market'])
+    url = "https://api.datamarket.azure.com/Bing/Search/v1/Composite"
+    params = {'Sources': "'image'",
+              'Query': "'{}'".format(text),
+              'Adult': "'Off'",
+              'Market': "'{}'".format(config['bing']['market']),
+              '$format': 'json'}
 
-    session = requests.session()
     try:
         api_key = random.choice(config['bing']['api_keys'])
-        response = session.get(url, auth=('', api_key))
+        response = requests.get(url, auth=('', api_key), params=params)
     except (requests.exceptions.RequestException, socket.timeout) as e:
         raise Exception('Error al hacer la petición HTTP')
 
@@ -60,15 +59,14 @@ def image_search(text, max_size=3072 * 1024):
                                   '"{}"'.format(source_url))
                 continue
 
-            session = requests.session()
             try:
                 utils.logger.info('image_search(): downloading image ' +
                                   '"{image_url}" from "{source_url}"'
                                   .format(image_url=image_url,
                                           source_url=source_url))
                 # fake the referrer
-                response = session.get(image_url,
-                                       headers={'Referer': source_url})
+                response = requests.get(image_url,
+                                        headers={'Referer': source_url})
             except (requests.exceptions.RequestException, socket.timeout) as e:
                 # if the download times out, try with the next result
                 continue
