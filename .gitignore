@@ -1,4 +1,4 @@
-config.json
+*.json
 __pycache__
 *.bak
 images
