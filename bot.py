@@ -43,7 +43,7 @@ class StreamWatcherListener(StreamListener):
         if not status.author.following:
             api.create_friendship(status.author.screen_name)
 
-        text, image = parse(status.text)
+        text, image = parse(utils.clean(status.text))
 
         # parser determined there's nothing to do about this status,
         # so we are done here
