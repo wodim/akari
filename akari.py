@@ -33,11 +33,12 @@ def akari_compose(filename, caption):
     # text on top
     draw = Drawing()
     draw.font = 'rounded-mgenplus-1c-bold.ttf'
-    draw.font_size = 50
+    draw.font_size = 100
     draw.fill_color = Color('#fff')
     draw.stroke_color = Color('#000')
+    draw.stroke_width = 3
     draw.gravity = 'south'
-    draw.text(0, 0, fill(caption, akari_mask.width // 35))
+    draw.text(0, 0, fill(caption, draw.font_size // 4))
     draw(img)
 
     # and save
