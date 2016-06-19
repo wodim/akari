@@ -43,12 +43,14 @@ class StreamWatcherListener(StreamListener):
         if not status.author.following:
             api.create_friendship(status.author.screen_name)
 
-        text, image = parse(utils.clean(status.text))
+        text = status.text
+        text = text.replace('@' + config['twitter']['screen_name'], '')
+        text = utils.clean(text)
 
-        # parser determined there's nothing to do about this status,
-        # so we are done here
-        if not text and not image:
-            return
+        try:
+            image, text = akari_search(text)
+        except Exception as e:
+            text, image = 'エラー： %s' % str(e), None
 
         # start building a reply. prepend @nick of whoever we are replying to
         reply = '@' + status.author.screen_name
@@ -74,25 +76,6 @@ class StreamWatcherListener(StreamListener):
     def on_timeout(self):
         print('Snoozing Zzzzzz')
 
-
-def parse(text):
-    try:
-        parts = text.split(' ')[1:]
-        command = parts[0]
-        if command == 'traduce' or command == 'translate':
-            text = translate(' '.join(parts[2:]), parts[1])
-            return text, None
-        elif command == 'imagen' or command == 'image':
-            filename, source_url = image_search(' '.join(parts[1:]))
-            return 'Aquí tienes (sacado de %s):' % source_url, filename
-        else:
-            text = ' '.join(parts).replace('akari ', '')
-            filename, caption = akari_search(text)
-            return caption, filename
-    except IndexError:
-        pass
-    except Exception as e:
-        return 'エラー： %s' % str(e), None
 
 if __name__ == '__main__':
     try:
