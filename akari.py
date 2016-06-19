@@ -53,6 +53,9 @@ def akari_compose(filename, caption):
 
 def akari_search(text):
     filename, source_url = image_search(text, max_size=10 * 1024 * 1024)
+    # make hashtags searchable
+    if text[0] == '#':
+        text = ' ' + text
     caption = 'わぁい{0} あかり{0}大好き'.format(text)
     return akari_compose(filename, caption)
 
