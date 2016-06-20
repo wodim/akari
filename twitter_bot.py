@@ -47,7 +47,7 @@ class StreamWatcherListener(StreamListener):
         try:
             image, text = akari_search(text)
         except Exception as e:
-            text, image = 'エラー： %s' % str(e), None
+            text, image = str(e), None
 
         # start building a reply. prepend @nick of whoever we are replying to
         reply = '@' + status.author.screen_name
@@ -55,15 +55,17 @@ class StreamWatcherListener(StreamListener):
             reply += ' ' + text
 
         # post it
-        # don't catch exceptions. in this case, it's better to let it crash
-        # so the stream reconnects
-        if image:
-            reply = utils.ellipsis(reply, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
-            api.update_with_media(image, status=reply,
-                                  in_reply_to_status_id=status.id)
-        else:
-            reply = utils.ellipsis(reply, utils.MAX_STATUS_LENGTH)
-            api.update_status(reply, in_reply_to_status_id=status.id)
+        try:
+            if image:
+                reply = utils.ellipsis(reply,
+                                       utils.MAX_STATUS_WITH_MEDIA_LENGTH)
+                api.update_with_media(image, status=reply,
+                                      in_reply_to_status_id=status.id)
+            else:
+                reply = utils.ellipsis(reply, utils.MAX_STATUS_LENGTH)
+                api.update_status(reply, in_reply_to_status_id=status.id)
+        except Exception as e:
+            utils.logger.error('Error posting: ' + str(e))
 
     def on_error(self, status_code):
         utils.logger.warning('An error has occured! Status code = {}'
