@@ -2,9 +2,6 @@ from tweepy.streaming import StreamListener
 from tweepy import Stream
 
 from akari import akari_search
-from config import config
-from image_search import image_search
-from translate import translate
 from twitter import api, auth
 import utils
 
@@ -22,11 +19,11 @@ class StreamWatcherListener(StreamListener):
                                   source=status.source))
 
         # ignore yourself
-        if status.author.screen_name == config['twitter']['screen_name']:
+        if status.author.screen_name == api._me.screen_name:
             return
 
         # ignore those who are not talking to you
-        if not '@' + config['twitter']['screen_name'] in status.text:
+        if not '@' + api._me.screen_name in status.text:
             if not hasattr(status, 'retweeted_status'):
                 # if it is not a retweet store this status
                 with open('pending.txt', 'a') as p_file:
@@ -44,7 +41,7 @@ class StreamWatcherListener(StreamListener):
             api.create_friendship(status.author.screen_name)
 
         text = status.text
-        text = text.replace('@' + config['twitter']['screen_name'], '')
+        text = text.replace('@' + api._me.screen_name, '')
         text = utils.clean(text)
 
         try:

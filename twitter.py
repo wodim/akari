@@ -8,3 +8,4 @@ auth = OAuthHandler(config['twitter']['consumer_key'],
 auth.set_access_token(config['twitter']['access_token'],
                       config['twitter']['access_token_secret'])
 api = API(auth)
+api._me = api.me()
