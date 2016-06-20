@@ -40,8 +40,10 @@ class StreamWatcherListener(StreamListener):
         if not status.author.following:
             api.create_friendship(status.author.screen_name)
 
-        text = status.text
-        text = utils.clean(text, replies=True, urls=True)
+        text = utils.clean(status.text, replies=True, urls=True)
+
+        if text == '':
+            return
 
         try:
             image, text = akari_search(text)
