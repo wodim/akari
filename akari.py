@@ -10,7 +10,6 @@ from wand.image import Image
 
 from config import config
 from image_search import image_search
-from twitter import api
 import utils
 
 
@@ -98,6 +97,8 @@ def akari_cron():
     # this will crash it there's no caption available thus far, that's fine,
     # as the amount of tries has been exceeded and there was nothing left to do
     # anyway.
+    from twitter import api
+
     status = utils.ellipsis(caption, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
     api.update_with_media(filename, status=status)
 
@@ -108,6 +109,8 @@ def akari_cron():
 
 # like akari_cron(), but it forces a certain caption to be published
 def akari_publish(text):
+    from twitter import api
+
     filename, caption = akari_search(text)
     status = utils.ellipsis(caption, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
     api.update_with_media(filename, status=status)
