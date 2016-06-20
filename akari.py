@@ -64,7 +64,7 @@ def akari_cron():
     # get a random line. will error out if there are none, which is okay.
     with open('pending.txt') as file:
         min_len = config['akari']['min_line_length']
-        lines = [x for x in file.read().splitlines() if len(x) > min_len]
+        lines = [x for x in file.read().splitlines() if len(x) >= min_len]
         if not lines:
             # return if there is nothing useful in the queue yet.
             return
@@ -80,7 +80,7 @@ def akari_cron():
             length = random.randint(min, max)
             text = ' '.join(words[start:start + length])
 
-            if len(text) >= 10:
+            if len(text) >= 4:
                 break
 
         return text
