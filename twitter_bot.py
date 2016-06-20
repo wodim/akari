@@ -41,8 +41,7 @@ class StreamWatcherListener(StreamListener):
             api.create_friendship(status.author.screen_name)
 
         text = status.text
-        text = text.replace('@' + api._me.screen_name, '')
-        text = utils.clean(text)
+        text = utils.clean(text, replies=True, urls=True)
 
         try:
             image, text = akari_search(text)
@@ -50,9 +49,10 @@ class StreamWatcherListener(StreamListener):
             text, image = str(e), None
 
         # start building a reply. prepend @nick of whoever we are replying to
-        reply = '@' + status.author.screen_name
         if text:
-            reply += ' ' + text
+            reply = '@' + status.author.screen_name + ' ' + text
+        else:
+            reply = '@' + status.author.screen_name
 
         # post it
         try:
