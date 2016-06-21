@@ -9,6 +9,10 @@ from config import config
 import utils
 
 
+class ImageSearchException(Exception):
+    pass
+
+
 def image_search(text, max_size=3072 * 1024):
     utils.logger.info('image_search(): "{}"'.format(text))
 
@@ -29,25 +33,25 @@ def image_search(text, max_size=3072 * 1024):
                                 if not x.startswith('*')])
         response = requests.get(url, auth=('', api_key), params=params)
     except (requests.exceptions.RequestException, socket.timeout) as e:
-        raise Exception('Error al hacer la petición HTTP')
+        raise ImageSearchException('Error al hacer la petición HTTP')
 
     if response.status_code != requests.codes.ok:
         utils.logger.warning('image_search(): response code not ok ({})'
                              .format(response.status_code))
-        raise Exception('No pude hacer la búsqueda: error {}'
-                        .format(response.status_code))
+        raise ImageSearchException('No pude hacer la búsqueda: error {}'
+                                   .format(response.status_code))
 
     try:
         decoded_json = json.loads(response.text)
     except:
         utils.logger.warning('image_search(): could not decode json response')
-        raise Exception('Error al decodificar el JSON.')
+        raise ImageSearchException('Error al decodificar el JSON.')
 
     try:
         results = decoded_json['d']['results'][0]['Image']
     except KeyError:
         utils.logger.warning('image_search(): api response can not be parsed')
-        raise Exception('Me he quedado sin gasolina.')
+        raise ImageSearchException('Me he quedado sin gasolina.')
 
     if len(results) > 0:
         # shuffle the results
@@ -102,4 +106,4 @@ def image_search(text, max_size=3072 * 1024):
             utils.logger.info('image_search(): complete')
             return filename, source_url
 
-    raise Exception('No hay resultados para "{}".'.format(text))
+    raise ImageSearchException('No hay resultados para "{}".'.format(text))

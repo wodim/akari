@@ -2,6 +2,7 @@ from tweepy.streaming import StreamListener
 from tweepy import Stream
 
 from akari import akari_search
+from image_search import ImageSearchException
 from twitter import api, auth
 import utils
 
@@ -43,8 +44,15 @@ class StreamWatcherListener(StreamListener):
 
         try:
             image, text = akari_search(text)
+        except ImageSearchException as e:
+            utils.logger.exception('Error searching for an image')
+            text = 'Error buscando una imagen: ' + str(e)
+            image = None
         except Exception as e:
-            text, image = str(e), None
+            utils.logger.exception('Error composing the image')
+            text = ('Ha ocurrido un error, vuelve a intentarlo. ' +
+                    'Si no se resuelve, envíame un mensaje privado.')
+            image = None
 
         # start building a reply. prepend @nick of whoever we are replying to
         if text:
@@ -63,7 +71,7 @@ class StreamWatcherListener(StreamListener):
                 reply = utils.ellipsis(reply, utils.MAX_STATUS_LENGTH)
                 api.update_status(reply, in_reply_to_status_id=status.id)
         except Exception as e:
-            utils.logger.error('Error posting: ' + str(e))
+            utils.logger.exception('Error posting.')
 
     def on_error(self, status_code):
         utils.logger.warning('An error has occured! Status code = {}'

@@ -5,14 +5,15 @@ import telepot.async
 
 from akari import akari_search
 from config import config
+from image_search import ImageSearchException
 import utils
 
 
-class BotException(Exception):
+class TelegramBotException(Exception):
     pass
 
 
-class AkariBot(telepot.async.Bot):
+class TelegramBot(telepot.async.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._answerer = telepot.async.helper.Answerer(self)
@@ -46,19 +47,16 @@ class AkariBot(telepot.async.Bot):
             await self.sendChatAction(chat_id, 'upload_photo')
             filename, caption = self._process_chat_message(message['text'])
             await self._send_reply(message, caption, filename=filename)
+        except ImageSearchException as e:
+            utils.logging.exception('Error searching for {chat_id} ({type})'
+                                    .format(chat_id=chat_id,
+                                            type=message['chat']['type']))
+            await self._send_reply(message, 'Error: ' + str(e))
         except Exception as e:
-            try:
-                exception_string = str(e)
-            except:
-                exception_string = '???'
-            finally:
-                utils.logging.info(('Error sent to {chat_id} ({type}): ' +
-                                    '{exception}')
-                                   .format(chat_id=chat_id,
-                                           type=message['chat']['type'],
-                                           exception=exception_string))
-                error_message = 'Error: ' + exception_string
-                await self._send_reply(message, error_message)
+            utils.logging.exception('Error handling {chat_id} ({type})'
+                                    .format(chat_id=chat_id,
+                                            type=message['chat']['type']))
+            await self._send_reply(message, 'Ha ocurrido un error.')
 
     async def _send_reply(self, message, caption, filename=None):
         if filename:
@@ -72,13 +70,15 @@ class AkariBot(telepot.async.Bot):
     def _process_chat_message(self, text):
         try:
             result = akari_search(text)
+        except ImageSearchException as e:
+            raise
         except Exception as e:
-            raise BotException(str(e))
+            raise TelegramBotException(str(e))
 
         return result
 
 if __name__ == '__main__':
-    bot = AkariBot(config['telegram']['token'])
+    bot = TelegramBot(config['telegram']['token'])
 
     loop = asyncio.get_event_loop()
     loop.create_task(bot.message_loop())
