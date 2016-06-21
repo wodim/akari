@@ -36,10 +36,6 @@ class StreamWatcherListener(StreamListener):
         if hasattr(status, 'retweeted_status'):
             return
 
-        # follow the author if he's new
-        if not status.author.following:
-            api.create_friendship(status.author.screen_name)
-
         text = utils.clean(status.text, replies=True, urls=True)
 
         if text == '':
