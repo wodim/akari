@@ -85,15 +85,23 @@ def image_search(text, max_size=3072 * 1024):
                                      'failed')
                 continue
 
-            sum = md5(bytearray(text, encoding="utf-8")).hexdigest()
-            filename = 'images/image_{}.jpeg'.format(sum)
+            md5sum = md5(bytearray(text, encoding="utf-8")).hexdigest()
 
+            # store the image
+            filename = 'images/image_{}_original.jpeg'.format(md5sum)
             with open(filename, 'wb') as handle:
                 for block in response.iter_content(1048576):
                     if not block:
                         break
                     handle.write(block)
                 handle.close()
+
+            # and a metadata file to know where it came from
+            metafile = 'images/image_{}_meta.txt'.format(md5sum)
+            with open(metafile, 'w') as handle:
+                handle.write('url:\t' + image_url + '\n')
+                handle.write('source:\t' + source_url + '\n')
+                handle.write('query:\t' + text + '\n')
 
             # if it's not an image (referrer trap, catch-all html 404...)
             # or if it's too big, try with the next result

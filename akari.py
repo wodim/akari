@@ -13,7 +13,7 @@ from image_search import image_search
 import utils
 
 
-def akari_compose(filename, caption):
+def akari_compose(filename, text):
     with Image(filename=filename) as original:
         img = original.convert('png')
 
@@ -30,6 +30,7 @@ def akari_compose(filename, caption):
     img.composite(akari_mask, left=0, top=0)
 
     # text on top
+    caption = 'わぁい{0} あかり{0}大好き'.format(text)
     draw = Drawing()
     draw.font = 'rounded-mgenplus-1c-bold.ttf'
     draw.font_size = 100
@@ -41,8 +42,8 @@ def akari_compose(filename, caption):
     draw(img)
 
     # and save
-    sum = md5(bytearray(caption, encoding='utf-8')).hexdigest()
-    filename = 'images/akari_{}.jpeg'.format(sum)
+    md5sum = md5(bytearray(text, encoding='utf-8')).hexdigest()
+    filename = 'images/image_{}_akari.jpeg'.format(md5sum)
     img.save(filename=filename)
 
     img.close()
@@ -56,8 +57,7 @@ def akari_search(text):
     # make hashtags searchable
     if text[0] == '#':
         text = ' ' + text
-    caption = 'わぁい{0} あかり{0}大好き'.format(text)
-    return akari_compose(filename, caption)
+    return akari_compose(filename, text)
 
 
 def akari_cron():
