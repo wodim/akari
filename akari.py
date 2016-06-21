@@ -37,7 +37,7 @@ def akari_compose(filename, caption):
     draw.stroke_color = Color('#000')
     draw.stroke_width = 2
     draw.gravity = 'south'
-    draw.text(0, 0, fill(caption, draw.font_size // 5))
+    draw.text(0, 0, fill(caption, int(draw.font_size // 5)))
     draw(img)
 
     # and save
