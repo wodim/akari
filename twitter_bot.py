@@ -27,10 +27,11 @@ class StreamWatcherListener(StreamListener):
         if not '@' + api._me.screen_name in status.text:
             if not hasattr(status, 'retweeted_status'):
                 # if it is not a retweet store this status
-                with open('pending.txt', 'a') as p_file:
-                    text = utils.clean(status.text, urls=True, replies=True,
-                                       rts=True)
-                    p_file.write(text + '\n')
+                text = utils.clean(status.text, urls=True, replies=True,
+                                   rts=True)
+                if text != '':
+                    with open('pending.txt', 'a') as p_file:
+                        p_file.write(text + '\n')
             return
 
         # ignore retweets
