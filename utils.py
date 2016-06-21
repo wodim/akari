@@ -22,7 +22,7 @@ class Logger(object):
 logger = Logger().get_logger()
 
 
-class RateLimit(object):
+class DB(object):
     def __init__(self):
         self.server = redis.Redis(socket_connect_timeout=1)
         try:
@@ -33,28 +33,32 @@ class RateLimit(object):
             logger.warning('Redis server unavailable: ' + str(e))
             self.server_available = False
 
+db = DB()
+
+
+class RateLimit(object):
     # returns a tuple: whether the action was accepted, how many requests are
     # left, and how much time until the ttl resets
     def hit(self, prefix, user, max=10, ttl=60 * 10):
         def r(x, y, z): return {'allowed': x, 'left': y, 'reset': z}
         # if the server is not available, let it through
-        if not self.server_available:
+        if not db.server_available:
             return r(True, 1, 0)
 
         key = str(prefix) + ':' + str(user)
-        value = self.server.get(key)
+        value = db.server.get(key)
 
         if not value:
             # if key does not exist...
-            self.server.set(key, 1)
-            self.server.expire(key, ttl)
+            db.server.set(key, 1)
+            db.server.expire(key, ttl)
             return r(True, max - 1, ttl)
         else:
-            current_ttl = self.server.ttl(key)
+            current_ttl = db.server.ttl(key)
             if int(value) >= max:
                 return r(False, 0, current_ttl)
             else:
-                self.server.incr(key)
+                db.server.incr(key)
                 return r(True, max - 1 - int(value), current_ttl)
 
 rate_limit = RateLimit()
