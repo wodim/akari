@@ -91,9 +91,7 @@ def timedelta(time):
 def clean(text, replies=False, hashtags=False, rts=False, urls=False):
     text = text.replace('\n', ' ')
     text = text.replace('\r', ' ')
-    text = re.sub(r'\s+', ' ', text)
     text = unescape(text)
-    text = text.strip()
 
     if rts:
         text = re.sub(r'^RT @[a-zA-Z0-9_]+:\s', '', text)
@@ -106,6 +104,9 @@ def clean(text, replies=False, hashtags=False, rts=False, urls=False):
 
     if urls:
         text = re.sub(r'https?://.*\s?', '', text)
+
+    text = re.sub(r'\s+', ' ', text)
+    text = text.strip()
 
     return text
 
