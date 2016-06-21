@@ -12,17 +12,21 @@ import utils
 def image_search(text, max_size=3072 * 1024):
     utils.logger.info('image_search(): "{}"'.format(text))
 
-    # remove '
-    text = text.replace("'", ' ')
+    # escape '
+    text = text.replace("'", "''")
     url = "https://api.datamarket.azure.com/Bing/Search/v1/Composite"
+    # if adult results are enabled, safesearch is off, else strict
+    adult = "'Off'" if config['bing']['adult'] else "'Strict'"
     params = {'Sources': "'image'",
               'Query': "'{}'".format(text),
-              'Adult': "'Off'",
+              'Adult': adult,
               'Market': "'{}'".format(config['bing']['market']),
               '$format': 'json'}
 
     try:
-        api_key = random.choice(config['bing']['api_keys'])
+        # choose a random api key. keys that start with * are disabled.
+        api_key = random.choice([x for x in config['bing']['api_keys']
+                                if not x.startswith('*')])
         response = requests.get(url, auth=('', api_key), params=params)
     except (requests.exceptions.RequestException, socket.timeout) as e:
         raise Exception('Error al hacer la petición HTTP')

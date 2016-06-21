@@ -11,7 +11,8 @@
     "bing": {
         "api_keys": [""],
         "market": "es-ES",
-        "banned_sources": ["desmotivaciones.es"]
+        "banned_sources": ["desmotivaciones.es"],
+        "adult": true
     },
     "akari": {
         "min_line_length": 10,
