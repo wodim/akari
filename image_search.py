@@ -114,4 +114,5 @@ def image_search(text, max_size=3072 * 1024):
             utils.logger.info('image_search(): complete')
             return filename, source_url
 
+    utils.logger.warning('image_search(): no results')
     raise ImageSearchException('No hay resultados para "{}".'.format(text))
