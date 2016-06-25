@@ -6,7 +6,8 @@
         "access_token_secret": ""
     },
     "telegram": {
-        "token": ""
+        "token": "",
+        "rate_limit_exempt_chat_ids": []
     },
     "bing": {
         "api_keys": [""],

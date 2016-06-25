@@ -32,17 +32,21 @@ class TelegramBot(telepot.async.Bot):
                                        type=message['chat']['type'],
                                        message_text=message['text']))
 
-            rate_limit = utils.rate_limit.hit('telegram', chat_id)
-            if not rate_limit['allowed']:
-                _msg = (('Message from {chat_id} ({type}): throttled ' +
-                        '(resets in {reset} seconds)')
-                        .format(chat_id=chat_id, type=message['chat']['type'],
-                                reset=rate_limit['reset']))
-                utils.logging.warn(_msg)
-                _msg = ('Echa el freno, Madaleno. Vuelve a intentarlo en {}.'
-                        .format(utils.timedelta(rate_limit['reset'])))
-                await self._send_reply(message, _msg)
-                return
+            # check rate limit
+            if chat_id not in config['telegram']['rate_limit_exempt_chat_ids']:
+                rate_limit = utils.rate_limit.hit('telegram', chat_id)
+                if not rate_limit['allowed']:
+                    _msg = (('Message from {chat_id} ({type}): throttled ' +
+                            '(resets in {reset} seconds)')
+                            .format(chat_id=chat_id,
+                                    type=message['chat']['type'],
+                                    reset=rate_limit['reset']))
+                    utils.logging.warn(_msg)
+                    _msg = (('Echa el freno, Madaleno. Vuelve a intentarlo ' +
+                            'en {}.')
+                            .format(utils.timedelta(rate_limit['reset'])))
+                    await self._send_reply(message, _msg)
+                    return
 
             await self.sendChatAction(chat_id, 'upload_photo')
             filename, caption = self._process_chat_message(message['text'])
