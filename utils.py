@@ -116,3 +116,12 @@ def ellipsis(text, max_length):
         return text[:max_length - 1] + '…'
     else:
         return text
+
+
+def build_path(hash_, kind):
+    if kind == 'meta':
+        ext = 'txt'
+    else:
+        ext = 'jpg'
+
+    return 'images/image_{}_{}.{}'.format(hash_, kind, ext)

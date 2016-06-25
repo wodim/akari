@@ -1,9 +1,9 @@
-from hashlib import md5
 import json
 import os
 import random
 import requests
 import socket
+import uuid
 
 from config import config
 import utils
@@ -85,10 +85,10 @@ def image_search(text, max_size=3072 * 1024):
                                      'failed')
                 continue
 
-            md5sum = md5(bytearray(text, encoding="utf-8")).hexdigest()
+            hash_ = str(uuid.uuid4())
 
             # store the image
-            filename = 'images/image_{}_original.jpeg'.format(md5sum)
+            filename = utils.build_path(hash_, 'original')
             with open(filename, 'wb') as handle:
                 for block in response.iter_content(1048576):
                     if not block:
@@ -97,7 +97,7 @@ def image_search(text, max_size=3072 * 1024):
                 handle.close()
 
             # and a metadata file to know where it came from
-            metafile = 'images/image_{}_meta.txt'.format(md5sum)
+            metafile = utils.build_path(hash_, 'meta')
             with open(metafile, 'w') as handle:
                 handle.write('url:\t' + image_url + '\n')
                 handle.write('source:\t' + source_url + '\n')
@@ -112,7 +112,7 @@ def image_search(text, max_size=3072 * 1024):
                 continue
 
             utils.logger.info('image_search(): complete')
-            return filename, source_url
+            return hash_, source_url
 
     utils.logger.warning('image_search(): no results')
     raise ImageSearchException('No hay resultados para "{}".'.format(text))

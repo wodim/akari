@@ -1,5 +1,4 @@
 from fnmatch import fnmatch
-from hashlib import md5
 from textwrap import fill
 import os
 import random
@@ -13,7 +12,8 @@ from image_search import image_search
 import utils
 
 
-def akari_compose(filename, text):
+def akari_compose(hash_, text):
+    filename = utils.build_path(hash_, 'original')
     with Image(filename=filename) as original:
         img = original.convert('png')
 
@@ -42,8 +42,7 @@ def akari_compose(filename, text):
     draw(img)
 
     # and save
-    md5sum = md5(bytearray(text, encoding='utf-8')).hexdigest()
-    filename = 'images/image_{}_akari.jpeg'.format(md5sum)
+    filename = utils.build_path(hash_, 'akari')
     img.save(filename=filename)
 
     img.close()
@@ -53,11 +52,11 @@ def akari_compose(filename, text):
 
 
 def akari_search(text):
-    filename, source_url = image_search(text, max_size=10 * 1024 * 1024)
+    hash_, source_url = image_search(text, max_size=10 * 1024 * 1024)
     # make hashtags searchable
     if text[0] == '#':
         text = ' ' + text
-    return akari_compose(filename, text)
+    return akari_compose(hash_, text)
 
 
 def akari_cron():
