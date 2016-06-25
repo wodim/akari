@@ -39,7 +39,7 @@ db = DB()
 class RateLimit(object):
     # returns a tuple: whether the action was accepted, how many requests are
     # left, and how much time until the ttl resets
-    def hit(self, prefix, user, max=10, ttl=60 * 10):
+    def hit(self, prefix, user, max=50, ttl=60 * 10):
         def r(x, y, z): return {'allowed': x, 'left': y, 'reset': z}
         # if the server is not available, let it through
         if not db.server_available:
