@@ -64,6 +64,7 @@ class TelegramBot(telepot.async.Bot):
 
     async def _send_reply(self, message, caption, filename=None):
         if filename:
+            caption = utils.ellipsis(caption, 200)
             f = open(filename, 'rb')
             await self.sendPhoto(message['chat']['id'],
                                  f, caption=caption)
