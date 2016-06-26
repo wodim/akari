@@ -14,6 +14,12 @@ class TelegramBotException(Exception):
 
 
 class TelegramBot(telepot.async.Bot):
+    HELP_MESSAGE = ('¡Hola! Soy Akari Endlösung.\n' +
+                    'Si quieres una imagen, sólo tienes que decirme qué ' +
+                    'quieres buscar.')
+    INVALID_CMD = ('No sé lo que quieres decir. Si necesitas ayuda, escribe ' +
+                   '/help.')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._answerer = telepot.async.helper.Answerer(self)
@@ -31,6 +37,15 @@ class TelegramBot(telepot.async.Bot):
                                .format(chat_id=chat_id,
                                        type=message['chat']['type'],
                                        message_text=message['text']))
+
+            if message['text'].startswith('/'):
+                command = message['text'].split(' ')[0][1:]
+                if command == 'help':
+                    _msg = self.HELP_MESSAGE
+                else:
+                    _msg = self.INVALID_CMD
+                await self._send_reply(message, _msg)
+                return
 
             # check rate limit
             if chat_id not in config['telegram']['rate_limit_exempt_chat_ids']:
