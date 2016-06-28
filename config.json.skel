@@ -3,7 +3,18 @@
         "consumer_key": "",
         "consumer_secret": "",
         "access_token": "",
-        "access_token_secret": ""
+        "access_token_secret": "",
+        "sources_whitelist": ["Twitter for Android",
+                              "Twitter for iPhone",
+                              "Twitter for Mac",
+                              "Twitter for Windows",
+                              "Twitter for Windows Phone",
+                              "Twitter Web Client",
+                              "TweetDeck",
+                              "Tweetbot for iΟS",
+                              "Tweetbot for Mac",
+                              "Mobile Web (M5)"],
+        "text_blacklist": [""]
     },
     "telegram": {
         "token": "",

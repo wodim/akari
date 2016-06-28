@@ -2,6 +2,7 @@ from tweepy.streaming import StreamListener
 from tweepy import Stream
 
 from akari import akari_search
+from config import config
 from image_search import ImageSearchException
 from twitter import api, auth
 import utils
@@ -23,19 +24,30 @@ class StreamWatcherListener(StreamListener):
         if status.author.screen_name == api._me.screen_name:
             return
 
-        # ignore those who are not talking to you
-        if not '@' + api._me.screen_name in status.text:
-            if not hasattr(status, 'retweeted_status'):
-                # if it is not a retweet store this status
-                text = utils.clean(status.text, urls=True, replies=True,
-                                   rts=True)
-                if text != '':
-                    with open('pending.txt', 'a') as p_file:
-                        p_file.write(text + '\n')
-            return
-
         # ignore retweets
         if hasattr(status, 'retweeted_status'):
+            return
+
+        # if the sources whitelist is enabled, ignore those who aren't on it
+        if len(config['twitter']['sources_whitelist']) > 0:
+            if status.source not in config['twitter']['sources_whitelist']:
+                return
+
+        # if the blacklist is enabled, ignore those who aren't on it
+        if len(config['twitter']['text_blacklist']) > 0:
+            if any(x in status.text
+                   for x in config['twitter']['text_blacklist']):
+                return
+
+        # store this status
+        text = utils.clean(status.text, urls=True, replies=True,
+                           rts=True)
+        if text != '':
+            with open('pending.txt', 'a') as p_file:
+                p_file.write(text + '\n')
+
+        # ignore those who are not talking to you
+        if not '@' + api._me.screen_name in status.text:
             return
 
         text = utils.clean(status.text, replies=True, urls=True)
