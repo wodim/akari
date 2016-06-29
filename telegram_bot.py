@@ -16,7 +16,9 @@ class TelegramBotException(Exception):
 class TelegramBot(telepot.async.Bot):
     HELP_MESSAGE = ('¡Hola! Soy Akari Endlösung.\n' +
                     'Si quieres una imagen, sólo tienes que decirme qué ' +
-                    'quieres buscar.')
+                    'quieres buscar.\n' +
+                    'También puedes pedirme imágenes en Twitter: ' +
+                    'https://twitter.com/akari_endlosung')
     INVALID_CMD = ('No sé lo que quieres decir. Si necesitas ayuda, escribe ' +
                    '/help.')
 
@@ -41,6 +43,8 @@ class TelegramBot(telepot.async.Bot):
             if message['text'].startswith('/'):
                 command = message['text'].split(' ')[0][1:]
                 if command == 'help':
+                    _msg = self.HELP_MESSAGE
+                elif command == 'start':
                     _msg = self.HELP_MESSAGE
                 else:
                     _msg = self.INVALID_CMD
