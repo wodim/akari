@@ -34,9 +34,11 @@ class TelegramBot(telepot.async.Bot):
             if content_type != 'text':
                 return
 
-            utils.logging.info(('Message from {chat_id} ({type}): ' +
+            longname = '{chat_id} ({name})'.format(chat_id=chat_id,
+                                                   name=self._name(message))
+            utils.logging.info(('Message from {longname} ({type}): ' +
                                 '"{message_text}"')
-                               .format(chat_id=chat_id,
+                               .format(longname=longname,
                                        type=message['chat']['type'],
                                        message_text=message['text']))
 
@@ -55,9 +57,9 @@ class TelegramBot(telepot.async.Bot):
             if chat_id not in config['telegram']['rate_limit_exempt_chat_ids']:
                 rate_limit = utils.rate_limit.hit('telegram', chat_id)
                 if not rate_limit['allowed']:
-                    _msg = (('Message from {chat_id} ({type}): throttled ' +
+                    _msg = (('Message from {longname} ({type}): throttled ' +
                             '(resets in {reset} seconds)')
-                            .format(chat_id=chat_id,
+                            .format(longname=longname,
                                     type=message['chat']['type'],
                                     reset=rate_limit['reset']))
                     utils.logging.warn(_msg)
@@ -71,13 +73,13 @@ class TelegramBot(telepot.async.Bot):
             filename, caption = self._process_chat_message(message['text'])
             await self._send_reply(message, caption, filename=filename)
         except ImageSearchException as e:
-            utils.logging.exception('Error searching for {chat_id} ({type})'
-                                    .format(chat_id=chat_id,
+            utils.logging.exception('Error searching for {longname} ({type})'
+                                    .format(longname=longname,
                                             type=message['chat']['type']))
             await self._send_reply(message, 'Error: ' + str(e))
         except Exception as e:
-            utils.logging.exception('Error handling {chat_id} ({type})'
-                                    .format(chat_id=chat_id,
+            utils.logging.exception('Error handling {longname} ({type})'
+                                    .format(longname=longname,
                                             type=message['chat']['type']))
             await self._send_reply(message, 'Ha ocurrido un error.')
 
@@ -100,6 +102,17 @@ class TelegramBot(telepot.async.Bot):
             raise TelegramBotException(str(e))
 
         return result
+
+    def _name(self, message):
+        longname = []
+        if 'username' in message['from']:
+            longname.append('@' + message['from']['username'])
+        if 'first_name' in message['from']:
+            longname.append(message['from']['first_name'])
+        if 'last_name' in message['from']:
+            longname.append(message['from']['last_name'])
+        return ', '.join(longname)
+
 
 if __name__ == '__main__':
     bot = TelegramBot(config['telegram']['token'])
