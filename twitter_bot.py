@@ -39,27 +39,23 @@ class StreamWatcherListener(StreamListener):
                    for x in config['twitter']['text_blacklist']):
                 return
 
-        # store this status
         text = utils.clean(status.text, urls=True, replies=True,
                            rts=True)
-        if text != '':
-            with open('pending.txt', 'a') as p_file:
-                p_file.write(text + '\n')
-
-        # ignore those who are not talking to you
-        if not '@' + api._me.screen_name in status.text:
+        if text == '':
             return
 
-        text = utils.clean(status.text, replies=True, urls=True)
-
-        if text == '':
+        # ignore those who are not talking to you
+        if not status.text.startswith('@' + api._me.screen_name):
+            # store this status
+            with open('pending.txt', 'a') as p_file:
+                p_file.write(text + '\n')
             return
 
         try:
             image, text = akari_search(text)
         except ImageSearchException as e:
             utils.logger.exception('Error searching for an image')
-            text = 'Error buscando una imagen: ' + str(e)
+            text = str(e)
             image = None
         except Exception as e:
             utils.logger.exception('Error composing the image')
