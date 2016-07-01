@@ -48,7 +48,7 @@ class StreamWatcherListener(StreamListener):
         if not status.text.startswith('@' + api._me.screen_name):
             # store this status
             with open('pending.txt', 'a') as p_file:
-                p_file.write(text + '\n')
+                p_file.write(str(status.id) + ' ' + text + '\n')
             return
 
         try:

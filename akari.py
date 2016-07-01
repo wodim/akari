@@ -1,3 +1,4 @@
+from datetime import datetime
 from fnmatch import fnmatch
 from textwrap import fill
 import os
@@ -60,35 +61,52 @@ def akari_search(text):
 
 
 def akari_cron():
+    from twitter import api
+
     # get a random line. will error out if there are none, which is okay.
     with open('pending.txt') as file:
-        min_len = config['akari']['min_line_length']
-        lines = [x for x in file.read().splitlines() if len(x) >= min_len]
-        if not lines:
-            # return if there is nothing useful in the queue yet.
-            return
+        ids = [int(x.split(' ')[0]) for x in file.read().splitlines()]
 
-    def new_caption():
-        # try to generate a new caption of at least 10 characters at least
-        # 10 times before giving up and letting anything through
-        min, max = config['akari']['min_words'], config['akari']['max_words']
-        line = random.choice(lines)
-        words = line.split(' ')
-        for i in range(10):
-            start = random.randint(0, len(words) - 1)
-            length = random.randint(min, max)
-            text = ' '.join(words[start:start + length])
+    # this function generates a score for each tweet
+    def score(status):
+        # number of favs
+        favs = status.favorite_count
+        # decay coefficient. promotes newer tweets to compensate for the lower
+        # amount of favs they have received (fewer people have seen them, in
+        # theory)
+        diff = (datetime.utcnow() - status.created_at).total_seconds()
+        decay_coeff = utils.decay(diff, 20 * 60, 3)
+        # number of followers
+        followers = status.user.followers_count
+        if followers == 0:
+            followers = 1
+        return favs * decay_coeff / followers
 
-            if len(text) >= 4:
-                break
-
-        return text
+    statuses = []
+    for i in range(0, len(ids), 100):
+        group = ids[i:i + 100]
+        statuses.extend(tuple(api.statuses_lookup(group)))
+    statuses = sorted(statuses, key=score, reverse=True)
 
     # generate a new caption and try to find an image for it 10 times before
     # giving up
+    min_len = config['akari']['min_line_length']
+    min_w, max_w = config['akari']['min_words'], config['akari']['max_words']
     for i in range(10):
         try:
-            filename, caption = akari_search(new_caption())
+            line = utils.clean(statuses[i].text, urls=True, replies=True,
+                               rts=True)
+            words = line.split(' ')
+
+            for j in range(10):
+                start = random.randint(0, len(words) - 1)
+                length = random.randint(min_w, max_w)
+                text = ' '.join(words[start:start + length])
+
+                if len(text) >= min_len:
+                    break
+
+            filename, caption = akari_search(text)
             break
         except:
             continue
@@ -96,8 +114,6 @@ def akari_cron():
     # this will crash it there's no caption available thus far, that's fine,
     # as the amount of tries has been exceeded and there was nothing left to do
     # anyway.
-    from twitter import api
-
     status = utils.ellipsis(caption, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
     api.update_with_media(filename, status=status)
 

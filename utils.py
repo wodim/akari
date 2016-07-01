@@ -125,3 +125,10 @@ def build_path(hash_, kind):
         ext = 'jpg'
 
     return 'images/image_{}_{}.{}'.format(hash_, kind, ext)
+
+
+def decay(time, max_time, coeff):
+    threshold = max_time - time
+    if threshold < 0:
+        threshold = 0
+    return 1 + threshold * (coeff - 1) / max_time
