@@ -12,7 +12,7 @@ def translate(text, lang_to, lang_from='es-ES'):
               'mtonly': '1'}
 
     try:
-        response = requests.get(url, params)
+        response = requests.get(url, params, timeout=5)
     except (requests.exceptions.RequestException, socket.timeout) as e:
         raise Exception('Error al hacer la petición HTTP')
 

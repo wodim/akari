@@ -31,7 +31,8 @@ def image_search(text, max_size=3072 * 1024):
         # choose a random api key. keys that start with * are disabled.
         api_key = random.choice([x for x in config['bing']['api_keys']
                                 if not x.startswith('*')])
-        response = requests.get(url, auth=('', api_key), params=params)
+        response = requests.get(url, auth=('', api_key), params=params,
+                                timeout=5)
     except (requests.exceptions.RequestException, socket.timeout) as e:
         raise ImageSearchException('Error al hacer la petición HTTP')
 
@@ -74,7 +75,8 @@ def image_search(text, max_size=3072 * 1024):
                                           source_url=source_url))
                 # fake the referrer
                 response = requests.get(image_url,
-                                        headers={'Referer': source_url})
+                                        headers={'Referer': source_url},
+                                        timeout=5)
             except (requests.exceptions.RequestException, socket.timeout) as e:
                 # if the download times out, try with the next result
                 continue
