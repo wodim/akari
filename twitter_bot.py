@@ -51,6 +51,11 @@ class StreamWatcherListener(StreamListener):
                 p_file.write(str(status.id) + ' ' + text + '\n')
             return
 
+        # ignore people with less than X followers
+        if status.author.followers_count < 50:
+            utils.logger.info('Ignoring because of low follower count')
+            return
+
         try:
             image, text = akari_search(text)
         except ImageSearchException as e:
