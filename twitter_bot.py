@@ -58,6 +58,11 @@ class StreamWatcherListener(StreamListener):
             utils.logger.info('Ignoring because of low follower count')
             return
 
+        # check ratelimit
+        rate_limit = utils.rate_limit.hit('twitter', 'global', 1, 5)
+        if not rate_limit['allowed']:
+            return
+
         try:
             image, text = akari_search(text)
         except ImageSearchException as e:
