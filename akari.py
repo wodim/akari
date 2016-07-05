@@ -9,12 +9,12 @@ from wand.drawing import Drawing
 from wand.image import Image
 
 from config import config
-from image_search import image_search
+from image_search import ImageSearch
 import utils
 
 
-def akari_compose(hash_, text):
-    filename = utils.build_path(hash_, 'original')
+def akari_compose(hash, text):
+    filename = utils.build_path(hash, 'original')
     with Image(filename=filename) as original:
         img = original.convert('png')
 
@@ -43,7 +43,7 @@ def akari_compose(hash_, text):
     draw(img)
 
     # and save
-    filename = utils.build_path(hash_, 'akari')
+    filename = utils.build_path(hash, 'akari')
     img.save(filename=filename)
 
     img.close()
@@ -53,11 +53,11 @@ def akari_compose(hash_, text):
 
 
 def akari_search(text):
-    hash_, source_url = image_search(text, max_size=10 * 1024 * 1024)
+    image = ImageSearch(text, max_size=10 * 1024 * 1024)
     # make hashtags searchable
     if text[0] == '#':
         text = ' ' + text
-    return akari_compose(hash_, text)
+    return akari_compose(image.hash, text)
 
 
 def akari_cron():
