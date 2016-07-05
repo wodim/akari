@@ -1,3 +1,5 @@
+import random
+
 from tweepy.streaming import StreamListener
 from tweepy import Stream
 
@@ -64,9 +66,12 @@ class StreamWatcherListener(StreamListener):
             image = None
         except Exception as e:
             utils.logger.exception('Error composing the image')
-            text = ('Ha ocurrido un error, vuelve a intentarlo. ' +
-                    'Si no se resuelve, envíame un mensaje privado.')
-            image = None
+            msgs = ('No te oigo...',
+                    'Prueba de nuevo más tarde.',
+                    'Espera un rato y lo vuelves a intentar.',
+                    'Me pillas en un mal momento, mejor luego.')
+            text = random.choice(msgs)
+            image = 'out-of-service.gif'
 
         # start building a reply. prepend @nick of whoever we are replying to
         if text:
