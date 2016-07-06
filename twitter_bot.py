@@ -3,7 +3,7 @@ import random
 from tweepy.streaming import StreamListener
 from tweepy import Stream
 
-from akari import akari_search
+from akari import Akari
 from config import config
 from image_search import ImageSearchException
 from twitter import twitter
@@ -64,7 +64,9 @@ class StreamWatcherListener(StreamListener):
             return
 
         try:
-            image, text = akari_search(text)
+            akari = Akari(text)
+            text = akari.caption
+            image = akari.filename
         except ImageSearchException as e:
             utils.logger.exception('Error searching for an image')
             text = str(e)
@@ -88,11 +90,11 @@ class StreamWatcherListener(StreamListener):
         try:
             if image:
                 reply = utils.ellipsis(reply,
-                                       utils.MAX_STATUS_WITH_MEDIA_LENGTH)
+                                       twitter.MAX_STATUS_WITH_MEDIA_LENGTH)
                 twitter.api.update_with_media(image, status=reply,
                                               in_reply_to_status_id=status.id)
             else:
-                reply = utils.ellipsis(reply, utils.MAX_STATUS_LENGTH)
+                reply = utils.ellipsis(reply, twitter.MAX_STATUS_LENGTH)
                 twitter.api.update_status(reply,
                                           in_reply_to_status_id=status.id)
         except Exception as e:
