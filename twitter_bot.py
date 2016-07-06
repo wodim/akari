@@ -110,7 +110,7 @@ class StreamWatcherListener(StreamListener):
         except Exception as e:
             utils.logger.exception('Error posting.')
 
-        utils.rate_limit.hit('twitter', 'global', 1, 5)
+        utils.rate_limit.hit('twitter', 'global', 3, 15)
 
     def on_error(self, status_code):
         utils.logger.warning('An error has occured! Status code = {}'
