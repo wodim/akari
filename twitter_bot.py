@@ -1,7 +1,6 @@
 import random
 
-from tweepy.streaming import StreamListener
-from tweepy import Stream
+import tweepy
 
 from akari import Akari
 from config import config
@@ -15,7 +14,8 @@ class StreamException(Exception):
     pass
 
 
-class StreamWatcherListener(StreamListener):
+class TwitterBot(tweepy.streaming.StreamListener):
+    @utils.background
     def on_status(self, status):
         utils.logger.info('{id} - "{text}" by {screen_name} via {source}'
                           .format(id=status.id,
@@ -60,7 +60,8 @@ class StreamWatcherListener(StreamListener):
             return
 
         # check ratelimit
-        if not utils.rate_limit.is_allowed('twitter', 'global'):
+        rate_limit = utils.rate_limit.hit('twitter', 'global', 1, 5)
+        if not rate_limit['allowed']:
             return
 
         try:
@@ -110,8 +111,6 @@ class StreamWatcherListener(StreamListener):
         except Exception as e:
             utils.logger.exception('Error posting.')
 
-        utils.rate_limit.hit('twitter', 'global', 3, 15)
-
     def on_error(self, status_code):
         utils.logger.warning('An error has occured! Status code = {}'
                              .format(status_code))
@@ -123,8 +122,8 @@ class StreamWatcherListener(StreamListener):
 
 if __name__ == '__main__':
     try:
-        listener = StreamWatcherListener()
-        stream = Stream(twitter.auth, listener)
+        listener = TwitterBot()
+        stream = tweepy.Stream(twitter.auth, listener)
         stream.userstream()
     except KeyboardInterrupt:
         pass

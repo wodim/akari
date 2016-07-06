@@ -1,6 +1,8 @@
+import functools
 from html import unescape
 import logging
 import re
+import threading
 
 import redis
 
@@ -145,3 +147,13 @@ def decay(time, max_time, coeff):
     if threshold < 0:
         threshold = 0
     return 1 + threshold * (coeff - 1) / max_time
+
+
+def background(func):
+    @functools.wraps(func)
+    def background_func(*args, **kwargs):
+        thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+        thread.start()
+        return thread
+
+    return background_func
