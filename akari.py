@@ -61,7 +61,7 @@ def akari_search(text):
 
 
 def akari_cron():
-    from twitter import api
+    from twitter import twitter
 
     # get a random line. will error out if there are none, which is okay.
     with open('pending.txt') as file:
@@ -85,7 +85,7 @@ def akari_cron():
     statuses = []
     for i in range(0, len(ids), 100):
         group = ids[i:i + 100]
-        statuses.extend(tuple(api.statuses_lookup(group)))
+        statuses.extend(tuple(twitter.api.statuses_lookup(group)))
     statuses = sorted(statuses, key=score, reverse=True)
 
     # generate a new caption and try to find an image for it 10 times before
@@ -114,8 +114,8 @@ def akari_cron():
     # this will crash it there's no caption available thus far, that's fine,
     # as the amount of tries has been exceeded and there was nothing left to do
     # anyway.
-    status = utils.ellipsis(caption, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
-    api.update_with_media(filename, status=status)
+    status = utils.ellipsis(caption, twitter.MAX_STATUS_WITH_MEDIA_LENGTH)
+    twitter.api.update_with_media(filename, status=status)
 
     # if a new caption has been successfully published, empty the file
     with open('pending.txt', 'w'):
@@ -124,8 +124,8 @@ def akari_cron():
 
 # like akari_cron(), but it forces a certain caption to be published
 def akari_publish(text):
-    from twitter import api
+    from twitter import twitter
 
     filename, caption = akari_search(text)
-    status = utils.ellipsis(caption, utils.MAX_STATUS_WITH_MEDIA_LENGTH)
-    api.update_with_media(filename, status=status)
+    status = utils.ellipsis(caption, twitter.MAX_STATUS_WITH_MEDIA_LENGTH)
+    twitter.api.update_with_media(filename, status=status)

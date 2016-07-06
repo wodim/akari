@@ -6,7 +6,7 @@ from tweepy import Stream
 from akari import akari_search
 from config import config
 from image_search import ImageSearchException
-from twitter import api, auth
+from twitter import twitter
 import utils
 
 
@@ -23,7 +23,7 @@ class StreamWatcherListener(StreamListener):
                                   source=status.source))
 
         # ignore yourself
-        if status.author.screen_name == api._me.screen_name:
+        if status.author.screen_name == twitter.me.screen_name:
             return
 
         # ignore retweets
@@ -47,7 +47,7 @@ class StreamWatcherListener(StreamListener):
             return
 
         # ignore those who are not talking to you
-        if not status.text.startswith('@' + api._me.screen_name):
+        if not status.text.startswith('@' + twitter.me.screen_name):
             # store this status
             with open('pending.txt', 'a') as p_file:
                 p_file.write(str(status.id) + ' ' + text + '\n')
@@ -89,11 +89,12 @@ class StreamWatcherListener(StreamListener):
             if image:
                 reply = utils.ellipsis(reply,
                                        utils.MAX_STATUS_WITH_MEDIA_LENGTH)
-                api.update_with_media(image, status=reply,
-                                      in_reply_to_status_id=status.id)
+                twitter.api.update_with_media(image, status=reply,
+                                              in_reply_to_status_id=status.id)
             else:
                 reply = utils.ellipsis(reply, utils.MAX_STATUS_LENGTH)
-                api.update_status(reply, in_reply_to_status_id=status.id)
+                twitter.api.update_status(reply,
+                                          in_reply_to_status_id=status.id)
         except Exception as e:
             utils.logger.exception('Error posting.')
 
@@ -109,7 +110,7 @@ class StreamWatcherListener(StreamListener):
 if __name__ == '__main__':
     try:
         listener = StreamWatcherListener()
-        stream = Stream(auth, listener)
+        stream = Stream(twitter.auth, listener)
         stream.userstream()
     except KeyboardInterrupt:
         pass

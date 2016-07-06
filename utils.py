@@ -4,9 +4,6 @@ import re
 
 import redis
 
-MAX_STATUS_LENGTH = 140
-MAX_STATUS_WITH_MEDIA_LENGTH = 116
-
 
 class Logger(object):
     def __init__(self):
