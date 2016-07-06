@@ -6,6 +6,7 @@ from tweepy import Stream
 from akari import Akari
 from config import config
 from image_search import ImageSearchException
+from translator import Translator, TranslatorException
 from twitter import twitter
 import utils
 
@@ -64,6 +65,17 @@ class StreamWatcherListener(StreamListener):
             return
 
         try:
+            if config['twitter']['auto_translate']['enabled']:
+                lang_from = config['twitter']['auto_translate']['from']
+                lang_to = config['twitter']['auto_translate']['to']
+                try:
+                    translator = Translator(text,
+                                            lang_from=lang_from,
+                                            lang_to=lang_to)
+                    text = translator.translation
+                except TranslatorException as e:
+                    utils.logger.exception('Error translating.')
+
             akari = Akari(text)
             text = akari.caption
             image = akari.filename
@@ -81,10 +93,9 @@ class StreamWatcherListener(StreamListener):
             image = 'out-of-service.gif'
 
         # start building a reply. prepend @nick of whoever we are replying to
+        reply = '@' + status.author.screen_name
         if text:
-            reply = '@' + status.author.screen_name + ' ' + text
-        else:
-            reply = '@' + status.author.screen_name
+            reply += ' ' + text
 
         # post it
         try:

@@ -14,7 +14,10 @@
                               "Tweetbot for iΟS",
                               "Tweetbot for Mac",
                               "Mobile Web (M5)"],
-        "text_blacklist": [""]
+        "text_blacklist": [""],
+        "auto_translate": {"enabled": 1,
+                           "from": "es-ES",
+                           "to": "en-US"}
     },
     "telegram": {
         "token": "",
