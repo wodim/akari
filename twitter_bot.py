@@ -60,8 +60,7 @@ class StreamWatcherListener(StreamListener):
             return
 
         # check ratelimit
-        rate_limit = utils.rate_limit.hit('twitter', 'global', 1, 5)
-        if not rate_limit['allowed']:
+        if not utils.rate_limit.is_allowed('twitter', 'global'):
             return
 
         try:
@@ -110,6 +109,8 @@ class StreamWatcherListener(StreamListener):
                                           in_reply_to_status_id=status.id)
         except Exception as e:
             utils.logger.exception('Error posting.')
+
+        utils.rate_limit.hit('twitter', 'global', 1, 5)
 
     def on_error(self, status_code):
         utils.logger.warning('An error has occured! Status code = {}'

@@ -58,6 +58,22 @@ class RateLimit(object):
                 db.server.incr(key)
                 return r(True, max - 1 - int(value), current_ttl)
 
+    # similar to hit(), but read-only
+    def is_allowed(self, prefix, user):
+        if not db.server_available:
+            return True
+
+        key = str(prefix) + ':' + str(user)
+        value = db.server.get(key)
+
+        if not value:
+            return True
+        else:
+            if int(value) >= max:
+                return False
+            else:
+                return True
+
 rate_limit = RateLimit()
 
 
