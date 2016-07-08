@@ -83,6 +83,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
             utils.logger.exception('Error searching for an image')
             text = str(e)
             image = None
+        except KeyboardInterrupt:
+            raise
         except Exception as e:
             utils.logger.exception('Error composing the image')
             msgs = ('No te oigo...',
