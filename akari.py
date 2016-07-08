@@ -1,5 +1,4 @@
 from datetime import datetime
-from fnmatch import fnmatch
 from textwrap import fill
 import os
 import random
@@ -26,9 +25,8 @@ class Akari(object):
         with Image(filename=filename) as original:
             img = original.convert('png')
 
-        akaris = [x for x in os.listdir('.') if fnmatch(x, 'akari-mask-*.png')]
-
-        akari_mask = Image(filename=random.choice(akaris))
+        mask_filename = 'masks/' + random.choice(os.listdir('masks'))
+        akari_mask = Image(filename=mask_filename)
 
         # resize
         img.transform(resize='{}x{}^'.format(akari_mask.width,
