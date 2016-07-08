@@ -13,7 +13,8 @@ class TranslatorException(Exception):
 class Translator(object):
     def __init__(self, text, lang_to, lang_from='es-ES'):
         url = 'http://mymemory.translated.net/api/ajaxfetch'
-        params = {'q': text, 'langpair': '{}|{}'.format(lang_from, lang_to),
+        params = {'q': text,
+                  'langpair': lang_from + '|' + lang_to,
                   'mtonly': '1'}
 
         try:
@@ -27,10 +28,10 @@ class Translator(object):
             utils.logger.warning('Translator: api response can not be decoded')
             raise TranslatorException('Error al decodificar el JSON.')
 
-        translation = decoded_json['responseData']['translatedText']
+        self.translation = decoded_json['responseData']['translatedText']
 
         if decoded_json['responseStatus'] != 200:
-            if 'IS AN INVALID TARGET LANGUAGE' in translation:
+            if 'IS AN INVALID TARGET LANGUAGE' in self.translation:
                 utils.logger.warning('Translator: incorrect language ({})'
                                      .format(decoded_json['responseStatus']))
                 raise TranslatorException('El idioma que has elegido no es ' +
@@ -40,17 +41,9 @@ class Translator(object):
                                      .format(decoded_json['responseStatus']))
                 raise TranslatorException('Error al traducir.')
 
-        if len(translation.strip()) == 0:
+        if len(self.translation.strip()) == 0:
             utils.logger.warning('Translator: unsupported language')
-            raise TranslatorException('El idioma no está soportado.')
+            raise TranslatorException('No hay traducción para el texto.')
 
-        try:
-            translation = decoded_json['responseData']['translatedText']
-            translation = html.unescape(translation)
-        except:
-            utils.logger.warning('Translator: api response can not be parsed')
-            raise TranslatorException('No va bien el tema.')
-
-        translation = translation.replace('@ ', '@')
-
-        self.translation = translation
+        self.translation = html.unescape(self.translation)
+        self.translation = self.translation.replace('@ ', '@')
