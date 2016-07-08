@@ -18,10 +18,8 @@ class Akari(object):
         # make hashtags searchable
         if text[0] == '#':
             text = ' ' + text
-        self.compose(image.hash, text)
 
-    def compose(self, hash, text):
-        filename = utils.build_path(hash, 'original')
+        filename = utils.build_path(image.hash, 'original')
         with Image(filename=filename) as original:
             img = original.convert('png')
 
@@ -50,7 +48,7 @@ class Akari(object):
         draw(img)
 
         # and save
-        filename = utils.build_path(hash, 'akari')
+        filename = utils.build_path(image.hash, 'akari')
         img.save(filename=filename)
 
         img.close()
