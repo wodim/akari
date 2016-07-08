@@ -2,7 +2,7 @@ from tweepy import OAuthHandler
 from tweepy import API
 
 from config import config
-from utils import logger
+import utils
 
 
 class Twitter(object):
@@ -17,7 +17,22 @@ class Twitter(object):
         self.api = API(self.auth)
         self.me = self.api.me()
 
-        logger.info('Twitter API initialised.')
+        utils.logger.info('Twitter API initialised.')
+
+    def post(self, status='', media=None, **kwargs):
+        if not status and not media:
+            raise ValueError('Nothing to post.')
+
+        if media:
+            status = utils.ellipsis(status, self.MAX_STATUS_WITH_MEDIA_LENGTH)
+            utils.logger.info('Twitter.post(): posting "{}" with "{}"'
+                              .format(status, media))
+            self.api.update_with_media(media, status=status, **kwargs)
+        else:
+            status = utils.ellipsis(status, self.MAX_STATUS_LENGTH)
+            utils.logger.info('Twitter.post(): posting "{}"'.format(status))
+            self.api.update_status(status, **kwargs)
+
 
 twitter = Twitter(config['twitter']['consumer_key'],
                   config['twitter']['consumer_secret'],

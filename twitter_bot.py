@@ -101,15 +101,10 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # post it
         try:
-            if image:
-                reply = utils.ellipsis(reply,
-                                       twitter.MAX_STATUS_WITH_MEDIA_LENGTH)
-                twitter.api.update_with_media(image, status=reply,
-                                              in_reply_to_status_id=status.id)
-            else:
-                reply = utils.ellipsis(reply, twitter.MAX_STATUS_LENGTH)
-                twitter.api.update_status(reply,
-                                          in_reply_to_status_id=status.id)
+            twitter.post(status=reply, media=image,
+                         in_reply_to_status_id=status.id)
+        except KeyboardInterrupt:
+            raise
         except Exception as e:
             utils.logger.exception('Error posting.')
 

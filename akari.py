@@ -116,9 +116,7 @@ def akari_cron():
     # this will crash it there's no caption available thus far, that's fine,
     # as the amount of tries has been exceeded and there was nothing left to do
     # anyway.
-    status = utils.ellipsis(akari.caption,
-                            twitter.MAX_STATUS_WITH_MEDIA_LENGTH)
-    twitter.api.update_with_media(akari.filename, status=status)
+    twitter.post(status=akari.caption, media=akari.filename)
 
     # if a new caption has been successfully published, empty the file
     with open('pending.txt', 'w'):
@@ -130,6 +128,4 @@ def akari_publish(text):
     from twitter import twitter
 
     akari = Akari(text)
-    status = utils.ellipsis(akari.caption,
-                            twitter.MAX_STATUS_WITH_MEDIA_LENGTH)
-    twitter.api.update_with_media(akari.filename, status=status)
+    twitter.post(status=akari.caption, media=akari.filename)
