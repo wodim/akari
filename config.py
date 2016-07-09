@@ -6,5 +6,5 @@ try:
 except IndexError:
     filename = 'config.json'
 
-with open(filename) as config_file:
+with open(filename, encoding='utf8') as config_file:
     config = json.load(config_file)
