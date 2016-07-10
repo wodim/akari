@@ -80,10 +80,6 @@ class TwitterBot(tweepy.streaming.StreamListener):
             akari = Akari(text)
             text = akari.caption
             image = akari.filename
-        except ImageSearchException as e:
-            utils.logger.exception('Error searching for an image')
-            text = str(e)
-            image = None
         except KeyboardInterrupt:
             raise
         except Exception as e:
