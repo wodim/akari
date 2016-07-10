@@ -120,7 +120,7 @@ class ImageSearch(object):
                     utils.logger.warning('ImageSearch(): not an image')
                     continue
 
-                if (os.stat(filename).st_size > max_size):
+                if os.stat(filename).st_size > max_size:
                     utils.logger.warning('ImageSearch(): image too big')
                     continue
 

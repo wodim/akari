@@ -1,5 +1,5 @@
 redis==2.10.5
-requests==2.9.1
-telepot==8.1
+requests==2.10.0
+telepot==8.2
 tweepy==3.5.0
 Wand==0.4.3
