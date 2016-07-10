@@ -5,6 +5,9 @@ import requests
 import socket
 import uuid
 
+from wand.exceptions import CorruptImageError
+from wand.image import Image
+
 from config import config
 import utils
 
@@ -63,7 +66,6 @@ class ImageSearch(object):
             for result in results:
                 image_url = result['MediaUrl']
                 source_url = result['SourceUrl']
-                mimetype = result['ContentType']
 
                 # check if the source is banned and, in that case, ignore it
                 if any(x in source_url
@@ -112,10 +114,14 @@ class ImageSearch(object):
 
                 # if it's not an image (referrer trap, catch-all html 404...)
                 # or if it's too big, try with the next result
-                if (not mimetype.startswith('image/') or
-                        os.stat(filename).st_size > max_size):
-                    utils.logger.warning('ImageSearch(): image too big or ' +
-                                         'not an image')
+                try:
+                    Image(filename=filename)
+                except CorruptImageError as e:
+                    utils.logger.warning('ImageSearch(): not an image')
+                    continue
+
+                if (os.stat(filename).st_size > max_size):
+                    utils.logger.warning('ImageSearch(): image too big')
                     continue
 
                 utils.logger.info('ImageSearch(): complete')
