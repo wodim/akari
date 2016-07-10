@@ -16,6 +16,10 @@ class ImageSearchException(Exception):
     pass
 
 
+class ImageSearchNoResultsException(Exception):
+    pass
+
+
 class ImageSearch(object):
     def __init__(self, text, max_size=3072 * 1024):
         utils.logger.info('ImageSearch(): "{}"'.format(text))
@@ -128,4 +132,5 @@ class ImageSearch(object):
                 return
 
         utils.logger.warning('ImageSearch(): no results')
-        raise ImageSearchException('No hay resultados para "{}".'.format(text))
+        raise ImageSearchNoResultsException('No hay resultados para "{}".'
+                                            .format(text))

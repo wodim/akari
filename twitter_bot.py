@@ -4,7 +4,7 @@ import tweepy
 
 from akari import Akari
 from config import config
-from image_search import ImageSearchException
+from image_search import ImageSearchNoResultsException
 from translator import Translator, TranslatorException
 from twitter import twitter
 import utils
@@ -80,6 +80,14 @@ class TwitterBot(tweepy.streaming.StreamListener):
             akari = Akari(text)
             text = akari.caption
             image = akari.filename
+        except ImageSearchNoResultsException:
+            utils.logger.exception('No results')
+            msgs = ('No he encontrado nada...',
+                    'No hay resultados.',
+                    'No entiendo nada.',
+                    'No sé lo que quieres.')
+            text = random.choice(msgs)
+            image = 'no-results.gif'
         except KeyboardInterrupt:
             raise
         except Exception as e:
