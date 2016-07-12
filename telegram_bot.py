@@ -5,7 +5,7 @@ import telepot.async
 
 from akari import Akari
 from config import config
-from image_search import ImageSearchException
+from image_search import ImageSearchNoResultsException
 import utils
 
 
@@ -74,7 +74,7 @@ class TelegramBot(telepot.async.Bot):
             await self._send_reply(message,
                                    akari.caption,
                                    filename=akari.filename)
-        except ImageSearchException as e:
+        except ImageSearchNoResultsException as e:
             utils.logging.exception('Error searching for {longname} ({type})'
                                     .format(longname=longname,
                                             type=message['chat']['type']))
@@ -98,7 +98,7 @@ class TelegramBot(telepot.async.Bot):
     def _process_chat_message(self, text):
         try:
             akari = Akari(text)
-        except ImageSearchException as e:
+        except ImageSearchNoResultsException as e:
             raise
         except Exception as e:
             raise TelegramBotException(str(e))
