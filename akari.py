@@ -104,6 +104,8 @@ def akari_cron():
                 if len(text) >= min_len:
                     break
 
+            utils.logger.info('Posting "{text}" from {tweet_id}'
+                              .format(text=text, tweet_id=statuses[i].id))
             akari = Akari(text)
             break
         except:

@@ -123,9 +123,6 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
 
 if __name__ == '__main__':
-    try:
-        listener = TwitterBot()
-        stream = tweepy.Stream(twitter.auth, listener)
-        stream.userstream()
-    except KeyboardInterrupt:
-        pass
+    listener = TwitterBot()
+    stream = tweepy.Stream(twitter.auth, listener)
+    stream.userstream()

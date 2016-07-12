@@ -25,12 +25,11 @@ class Twitter(object):
 
         if media:
             status = utils.ellipsis(status, self.MAX_STATUS_WITH_MEDIA_LENGTH)
-            utils.logger.info('Twitter.post(): posting "{}" with "{}"'
-                              .format(status, media))
+            utils.logger.info('Posting "{}" with "{}"'.format(status, media))
             self.api.update_with_media(media, status=status, **kwargs)
         else:
             status = utils.ellipsis(status, self.MAX_STATUS_LENGTH)
-            utils.logger.info('Twitter.post(): posting "{}"'.format(status))
+            utils.logger.info('Posting "{}"'.format(status))
             self.api.update_status(status, **kwargs)
 
 
