@@ -1,7 +1,7 @@
 import asyncio
 
 import telepot
-import telepot.async
+import telepot.aio
 
 from akari import Akari
 from config import config
@@ -13,7 +13,7 @@ class TelegramBotException(Exception):
     pass
 
 
-class TelegramBot(telepot.async.Bot):
+class TelegramBot(telepot.aio.Bot):
     HELP_MESSAGE = ('¡Hola! Soy Akari Endlösung.\n' +
                     'Si quieres una imagen, sólo tienes que decirme qué ' +
                     'quieres buscar.\n' +
@@ -24,7 +24,7 @@ class TelegramBot(telepot.async.Bot):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._answerer = telepot.async.helper.Answerer(self)
+        self._answerer = telepot.aio.helper.Answerer(self)
 
     async def on_chat_message(self, message):
         try:
@@ -34,12 +34,11 @@ class TelegramBot(telepot.async.Bot):
             if content_type != 'text':
                 return
 
+            name = self.format_name(message)
             longname = '{chat_id} ({name})'.format(chat_id=chat_id,
-                                                   name=self._name(message))
-            utils.logging.info(('Message from {longname} ({type}): ' +
-                                '"{message_text}"')
+                                                   name=name)
+            utils.logging.info(('Message from {longname}: "{message_text}"')
                                .format(longname=longname,
-                                       type=message['chat']['type'],
                                        message_text=message['text']))
 
             if message['text'].startswith('/'):
@@ -50,62 +49,56 @@ class TelegramBot(telepot.async.Bot):
                     _msg = self.HELP_MESSAGE
                 else:
                     _msg = self.INVALID_CMD
-                await self._send_reply(message, _msg)
+                await self.send_message(message, _msg)
                 return
 
             # check rate limit
             if chat_id not in config['telegram']['rate_limit_exempt_chat_ids']:
                 rate_limit = utils.rate_limit.hit('telegram', chat_id)
                 if not rate_limit['allowed']:
-                    _msg = (('Message from {longname} ({type}): throttled ' +
+                    _msg = (('Message from {longname}: throttled ' +
                             '(resets in {reset} seconds)')
                             .format(longname=longname,
-                                    type=message['chat']['type'],
                                     reset=rate_limit['reset']))
                     utils.logging.warn(_msg)
                     _msg = (('Echa el freno, Madaleno. Vuelve a intentarlo ' +
                             'en {}.')
                             .format(utils.timedelta(rate_limit['reset'])))
-                    await self._send_reply(message, _msg)
+                    await self.send_message(message, _msg)
                     return
 
             await self.sendChatAction(chat_id, 'upload_photo')
-            akari = self._process_chat_message(message['text'])
-            await self._send_reply(message,
-                                   akari.caption,
-                                   filename=akari.filename)
-        except ImageSearchNoResultsException as e:
-            utils.logging.exception('Error searching for {longname} ({type})'
-                                    .format(longname=longname,
-                                            type=message['chat']['type']))
-            await self._send_reply(message, 'Error: ' + str(e))
+
+            # first, search...
+            try:
+                akari = Akari(message['text'])
+            except ImageSearchNoResultsException:
+                utils.logging.exception('Error searching for ' + longname)
+                await self.send_message(message, 'No hay resultados.')
+                return
+
+            # then, if successful, send the pic
+            await self.send_message(message,
+                                    akari.caption,
+                                    filename=akari.filename)
         except Exception as e:
             utils.logging.exception('Error handling {longname} ({type})'
                                     .format(longname=longname,
                                             type=message['chat']['type']))
-            await self._send_reply(message, 'Ha ocurrido un error.')
+            await self.send_message(message, 'Ha ocurrido un error.')
 
-    async def _send_reply(self, message, caption, filename=None):
+    async def send_message(self, message, caption, filename=None):
         if filename:
             caption = utils.ellipsis(caption, 200)
-            f = open(filename, 'rb')
-            await self.sendPhoto(message['chat']['id'],
-                                 f, caption=caption)
+            with open(filename, 'rb') as f:
+                await self.sendPhoto(message['chat']['id'],
+                                     f, caption=caption)
         else:
+            caption = utils.ellipsis(caption, 4096)
             await self.sendMessage(message['chat']['id'],
                                    caption)
 
-    def _process_chat_message(self, text):
-        try:
-            akari = Akari(text)
-        except ImageSearchNoResultsException as e:
-            raise
-        except Exception as e:
-            raise TelegramBotException(str(e))
-
-        return akari
-
-    def _name(self, message):
+    def format_name(self, message):
         longname = []
         if 'username' in message['from']:
             longname.append('@' + message['from']['username'])
