@@ -80,33 +80,43 @@ def akari_cron():
             followers = 1
         return favs * decay_coeff / followers
 
+    # 100 at a time is the max statuses_lookup() can do.
     statuses = []
     for i in range(0, len(ids), 100):
         group = ids[i:i + 100]
         statuses.extend(tuple(twitter.api.statuses_lookup(group)))
     statuses = sorted(statuses, key=score, reverse=True)
 
+    # minimum and maximum amount of words a generated caption will have.
+    min_w, max_w = config['akari']['min_words'], config['akari']['max_words']
+    # tweets shorter than this will be posted verbatim
+    max_verbatim = 50
+
     # generate a new caption and try to find an image for it 10 times before
     # giving up
-    min_len = config['akari']['min_line_length']
-    min_w, max_w = config['akari']['min_words'], config['akari']['max_words']
     for i in range(10):
         try:
             line = utils.clean(statuses[i].text, urls=True, replies=True,
                                rts=True)
-            words = line.split(' ')
 
-            for j in range(10):
-                start = random.randint(0, len(words) - 1)
-                length = random.randint(min_w, max_w)
-                text = ' '.join(words[start:start + length])
+            if len(line) <= max_verbatim:
+                caption = line
+            else:
+                words = line.split(' ')
+                # try to generate something longer than 2 characters 10 times,
+                # if not, let it through
+                for j in range(10):
+                    start = random.randint(0, len(words) - 1)
+                    length = random.randint(min_w, max_w)
+                    caption = ' '.join(words[start:start + length])
 
-                if len(text) >= min_len:
-                    break
+                    if len(caption) >= 2:
+                        break
 
-            utils.logger.info('Posting "{text}" from {tweet_id}'
-                              .format(text=text, tweet_id=statuses[i].id))
-            akari = Akari(text)
+            utils.logger.info('Posting "{caption}" from {tweet_id}'
+                              .format(caption=caption,
+                                      tweet_id=statuses[i].id))
+            akari = Akari(caption)
             break
         except:
             continue
