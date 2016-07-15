@@ -40,7 +40,7 @@ class ImageSearch(object):
             api_key = random.choice([x for x in config['bing']['api_keys']
                                     if not x.startswith('*')])
             response = requests.get(url, auth=('', api_key), params=params,
-                                    timeout=10)
+                                    timeout=20)
         except (requests.exceptions.RequestException, socket.timeout) as e:
             raise ImageSearchException('Error al hacer la petición HTTP')
 
