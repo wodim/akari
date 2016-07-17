@@ -36,20 +36,15 @@ class Akari(object):
         img.composite(akari_mask, left=0, top=0)
 
         # text on top
-        caption = text
+        caption = 'わぁい{0} あかり{0}大好き'.format(text)
         draw = Drawing()
-        draw.font = 'NimbusSanL-RegIta.otf'
-        draw.font_size = 90
-        draw.fill_color = Color('#000')
-        draw.translate(10, 100)
-
-        for i in range(8):
-            draw.translate(-1, 1)
-            draw.gravity = 'south'
-            draw.text(0, 0, fill(caption, int(draw.font_size // 3)))
-
+        draw.font = 'rounded-mgenplus-1c-bold.ttf'
+        draw.font_size = 100
         draw.fill_color = Color('#fff')
-        draw.text(0, 0, fill(caption, int(draw.font_size // 3)))
+        draw.stroke_color = Color('#000')
+        draw.stroke_width = 2
+        draw.gravity = 'south'
+        draw.text(0, 0, fill(caption, int(draw.font_size // 5)))
         draw(img)
 
         # and save
