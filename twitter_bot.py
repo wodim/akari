@@ -38,7 +38,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # if the blacklist is enabled, ignore those who aren't on it
         if len(config['twitter']['text_blacklist']) > 0:
-            if any(x in status.text
+            if any(x.lower() in status.text.lower()
                    for x in config['twitter']['text_blacklist']):
                 return
 
