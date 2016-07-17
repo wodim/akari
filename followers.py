@@ -1,12 +1,16 @@
 import tweepy
 
 from twitter import twitter
+import utils
 
 
 def follow_my_followers():
     for page in tweepy.Cursor(twitter.api.followers, count=200).pages():
         for user in page:
             if not user.following:
+                utils.logger.info('Following @{screen_name} ({id}) back'
+                                  .format(screen_name=user.screen_name,
+                                          id=user.id))
                 user.follow()
 
 
@@ -16,4 +20,7 @@ def unfollow_my_unfollowers():
         user_ids = [user.id for user in page]
         for user in twitter.api._lookup_friendships(user_ids):
             if not user.is_followed_by:
+                utils.logger.info('Unfollowing @{screen_name} ({id})'
+                                  .format(screen_name=user.screen_name,
+                                          id=user.id))
                 twitter.api.destroy_friendship(user.id)
