@@ -11,7 +11,10 @@ def follow_my_followers():
                 utils.logger.info('Following @{screen_name} ({id}) back'
                                   .format(screen_name=user.screen_name,
                                           id=user.id))
-                user.follow()
+                try:
+                    user.follow()
+                except tweepy.error.TweepError as e:
+                    utils.logger.exception('Error following.')
 
 
 def unfollow_my_unfollowers():
@@ -23,4 +26,7 @@ def unfollow_my_unfollowers():
                 utils.logger.info('Unfollowing @{screen_name} ({id})'
                                   .format(screen_name=user.screen_name,
                                           id=user.id))
-                twitter.api.destroy_friendship(user.id)
+                try:
+                    twitter.api.destroy_friendship(user.id)
+                except tweepy.error.TweepError as e:
+                    utils.logger.exception('Error unfollowing.')
