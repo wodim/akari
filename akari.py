@@ -7,7 +7,6 @@ from wand.color import Color
 from wand.drawing import Drawing
 from wand.image import Image
 
-from config import config
 from image_search import ImageSearch
 import utils
 
@@ -87,8 +86,6 @@ def akari_cron():
         statuses.extend(tuple(twitter.api.statuses_lookup(group)))
     statuses = sorted(statuses, key=score, reverse=True)
 
-    # minimum and maximum amount of words a generated caption will have.
-    min_w, max_w = config['akari']['min_words'], config['akari']['max_words']
     # tweets shorter than this will be posted verbatim
     max_verbatim = 50
 
@@ -107,7 +104,7 @@ def akari_cron():
                 # if not, let it through
                 for j in range(10):
                     start = random.randint(0, len(words) - 1)
-                    length = random.randint(min_w, max_w)
+                    length = random.randint(1, 10)
                     caption = ' '.join(words[start:start + length])
 
                     if len(caption) >= 2:
