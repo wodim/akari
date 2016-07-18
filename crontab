@@ -1,0 +1,4 @@
+*/20 * * * * (cd akari_endlosung && python3 -c "from akari import akari_cron; akari_cron()" >> akari_cron.log 2>&1)
+*/15 * * * * (cd akari_endlosung && python3 -c "from followers import follow_my_followers; follow_my_followers()" >> akari_cron.log 2>&1)
+0 6 * * * (cd akari_endlosung && python3 -c "from followers import unfollow_my_unfollowers; unfollow_my_unfollowers()" >> akari_cron.log 2>&1)
+0 6 * * * find akari_endlosung/images -type f -delete
