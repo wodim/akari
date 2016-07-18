@@ -18,7 +18,7 @@ class Akari(object):
         if text[0] == '#':
             text = ' ' + text
 
-        width, height = 900, 640
+        width, height = 800, 600
 
         filename = utils.build_path(image.hash, 'original')
         with Image(filename=filename) as original:
@@ -51,7 +51,7 @@ class Akari(object):
             draw.stroke_color = Color('#000')
             draw.stroke_width = 1
             draw.gravity = 'south'
-            draw.text(0, 0, fill(caption, 20))
+            draw.text(0, 0, fill(caption, 18))
             draw(this_frame)
 
             gif.sequence.append(this_frame)
