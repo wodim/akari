@@ -142,6 +142,8 @@ def ellipsis(text, max_length):
 def build_path(hash_, kind):
     if kind == 'meta':
         ext = 'txt'
+    elif kind == 'animation':
+        ext = 'gif'
     else:
         ext = 'jpg'
 

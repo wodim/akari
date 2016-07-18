@@ -18,40 +18,53 @@ class Akari(object):
         if text[0] == '#':
             text = ' ' + text
 
+        width, height = 900, 640
+
         filename = utils.build_path(image.hash, 'original')
         with Image(filename=filename) as original:
-            img = original.convert('png')
+            if original.animation:
+                bg_img = Image(original.sequence[0])
+            else:
+                bg_img = Image(original)
 
-        mask_filename = 'masks/' + random.choice(os.listdir('masks'))
-        akari_mask = Image(filename=mask_filename)
-
+        bg_img.alpha_channel = False
         # resize
-        img.transform(resize='{}x{}^'.format(akari_mask.width,
-                                             akari_mask.height))
-        img.crop(width=akari_mask.width, height=akari_mask.height,
-                 gravity='center')
+        bg_img.transform(resize='{}x{}^'.format(width, height))
+        bg_img.crop(width=width, height=height, gravity='center')
 
-        # put akari on top
-        img.composite(akari_mask, left=0, top=0)
+        frames = sorted(['frames/' + x for x in os.listdir('frames')])
+        gif = Image()
 
-        # text on top
-        caption = 'わぁい{0} あかり{0}大好き'.format(text)
-        draw = Drawing()
-        draw.font = 'rounded-mgenplus-1c-bold.ttf'
-        draw.font_size = 100
-        draw.fill_color = Color('#fff')
-        draw.stroke_color = Color('#000')
-        draw.stroke_width = 2
-        draw.gravity = 'south'
-        draw.text(0, 0, fill(caption, int(draw.font_size // 5)))
-        draw(img)
+        for frame in frames:
+            this_frame = Image(bg_img)
+
+            # put akari on top
+            akari_frame = Image(filename=frame)
+            this_frame.composite(akari_frame, left=0, top=0)
+
+            # text on top
+            caption = 'わぁい{0} あかり{0}大好き'.format(text)
+            draw = Drawing()
+            draw.font = 'rounded-mgenplus-1c-bold.ttf'
+            draw.font_size = 50
+            draw.fill_color = Color('#fff')
+            draw.stroke_color = Color('#000')
+            draw.stroke_width = 1
+            draw.gravity = 'south'
+            draw.text(0, 0, fill(caption, 20))
+            draw(this_frame)
+
+            gif.sequence.append(this_frame)
+            with gif.sequence[-1]:
+                gif.sequence[-1].delay = 10
+            this_frame.destroy()
 
         # and save
-        filename = utils.build_path(image.hash, 'akari')
-        img.save(filename=filename)
+        filename = utils.build_path(image.hash, 'animation')
+        gif.save(filename=filename)
 
-        img.close()
-        akari_mask.close()
+        gif.close()
+        bg_img.close()
 
         self.filename = filename
         self.caption = caption
