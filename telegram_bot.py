@@ -71,7 +71,7 @@ class TelegramBot(telepot.aio.Bot):
 
             # first, search...
             try:
-                akari = Akari(message['text'])
+                akari = Akari(message['text'], type='still')
             except ImageSearchNoResultsException:
                 utils.logging.exception('Error searching for ' + longname)
                 await self.send_message(message, 'No hay resultados.')
