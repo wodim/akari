@@ -94,7 +94,8 @@ class Akari(object):
                 with result.sequence[-1]:
                     result.sequence[-1].delay = 10
 
-            this_frame.destroy()
+            akari_frame.close()
+            this_frame.close()
 
         # save the result
         filename = utils.build_path(image.hash, self.type)
