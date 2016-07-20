@@ -1,7 +1,6 @@
 from datetime import datetime
 from textwrap import fill
 import os
-import random
 
 from wand.color import Color
 from wand.drawing import Drawing
@@ -144,32 +143,18 @@ def akari_cron():
     # tweets shorter than this will be posted verbatim
     max_verbatim = 50
 
-    # generate a new caption and try to find an image for it 10 times before
-    # giving up
-    for i in range(10):
+    # generate a new caption and try to find an image for each status
+    for status in statuses:
         try:
-            line = utils.clean(statuses[i].text, urls=True, replies=True,
-                               rts=True)
+            caption = utils.clean(status.text, urls=True, replies=True,
+                                  rts=True)
 
-            if len(line) <= max_verbatim:
-                caption = line
-            else:
-                words = line.split(' ')
-                # try to generate something longer than 2 characters 10 times,
-                # if not, let it through
-                for j in range(10):
-                    start = random.randint(0, len(words) - 1)
-                    length = random.randint(1, 10)
-                    caption = ' '.join(words[start:start + length])
-
-                    if len(caption) >= 2:
-                        break
-
-            utils.logger.info('Posting "{caption}" from {tweet_id}'
-                              .format(caption=caption,
-                                      tweet_id=statuses[i].id))
-            akari = Akari(caption, type='animation')
-            break
+            if len(caption) <= max_verbatim:
+                utils.logger.info('Posting "{caption}" from {tweet_id}'
+                                  .format(caption=caption,
+                                          tweet_id=status.id))
+                akari = Akari(caption, type='animation')
+                break
         except:
             continue
 
