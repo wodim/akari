@@ -172,5 +172,5 @@ def akari_cron():
 def akari_publish(text):
     from twitter import twitter
 
-    akari = Akari(text, type='animated')
+    akari = Akari(text, type='animation')
     twitter.post(status=akari.caption, media=akari.filename)
