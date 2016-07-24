@@ -19,19 +19,16 @@ class Twitter(object):
 
         utils.logger.info('Twitter API initialised.')
 
-    def post(self, status='', media=None, truncate=True, **kwargs):
+    def post(self, status='', media=None, **kwargs):
         if not status and not media:
             raise ValueError('Nothing to post.')
 
         if media:
-            if truncate:
-                status = utils.ellipsis(status,
-                                        self.MAX_STATUS_WITH_MEDIA_LENGTH)
+            status = utils.ellipsis(status, self.MAX_STATUS_WITH_MEDIA_LENGTH)
             utils.logger.info('Posting "{}" with "{}"'.format(status, media))
             self.api.update_with_media(media, status=status, **kwargs)
         else:
-            if truncate:
-                status = utils.ellipsis(status, self.MAX_STATUS_LENGTH)
+            status = utils.ellipsis(status, self.MAX_STATUS_LENGTH)
             utils.logger.info('Posting "{}"'.format(status))
             self.api.update_status(status, **kwargs)
 

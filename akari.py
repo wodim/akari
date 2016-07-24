@@ -141,7 +141,7 @@ def akari_cron():
     statuses = sorted(statuses, key=score, reverse=True)
 
     # tweets shorter than this will be posted verbatim
-    max_verbatim = 41
+    max_verbatim = 50
 
     # generate a new caption and try to find an image for each status
     for status in statuses:
@@ -153,9 +153,6 @@ def akari_cron():
                 utils.logger.info('Posting "{caption}" from {tweet_id}'
                                   .format(caption=caption,
                                           tweet_id=status.id))
-                permalink = ('https://twitter.com/{screen_name}/status/{id}'
-                             .format(screen_name=status.user.screen_name,
-                                     id=status.id))
                 akari = Akari(caption, type='animation')
                 break
         except:
@@ -164,8 +161,7 @@ def akari_cron():
     # this will crash it there's no caption available thus far, that's fine,
     # as the amount of tries has been exceeded and there was nothing left to do
     # anyway.
-    new_status = akari.caption + ' ' + permalink
-    twitter.post(status=new_status, media=akari.filename, truncate=False)
+    twitter.post(status=akari.caption, media=akari.filename)
 
     # if a new caption has been successfully published, empty the file
     with open('pending.txt', 'w'):
