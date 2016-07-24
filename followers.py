@@ -7,7 +7,7 @@ import utils
 def follow_my_followers():
     for page in tweepy.Cursor(twitter.api.followers, count=200).pages():
         for user in page:
-            if not user.following:
+            if not user.following and not user.follow_request_sent:
                 utils.logger.info('Following @{screen_name} ({id}) back'
                                   .format(screen_name=user.screen_name,
                                           id=user.id))
