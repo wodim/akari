@@ -156,6 +156,7 @@ def akari_cron():
                 akari = Akari(caption, type='animation')
                 break
         except:
+            utils.logger.exception('Error generating a caption.')
             continue
 
     # this will crash it there's no caption available thus far, that's fine,
