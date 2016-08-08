@@ -127,11 +127,10 @@ def akari_cron():
         # theory)
         diff = (datetime.utcnow() - status.created_at).total_seconds()
         decay_coeff = utils.decay(diff, 20 * 60, 3)
-        # number of followers
-        followers = status.user.followers_count
-        if followers == 0:
-            followers = 1
-        return favs * decay_coeff / followers
+        # check number of followers
+        if status.user.followers_count < 500:
+            return 0
+        return favs * decay_coeff / status.user.followers_count
 
     # 100 at a time is the max statuses_lookup() can do.
     statuses = []
