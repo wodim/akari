@@ -120,17 +120,13 @@ def akari_cron():
 
     # this function generates a score for each tweet
     def score(status):
-        # number of favs
-        favs = status.favorite_count
+        favs, followers = status.favorite_count, status.user.followers_count
         # decay coefficient. promotes newer tweets to compensate for the lower
         # amount of favs they have received (fewer people have seen them, in
         # theory)
         diff = (datetime.utcnow() - status.created_at).total_seconds()
         decay_coeff = utils.decay(diff, 20 * 60, 3)
-        # check number of followers
-        if status.user.followers_count < 500:
-            return 0
-        return favs * decay_coeff / status.user.followers_count
+        return decay_coeff * favs / followers
 
     # 100 at a time is the max statuses_lookup() can do.
     statuses = []
