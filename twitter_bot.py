@@ -65,6 +65,15 @@ class TwitterBot(tweepy.streaming.StreamListener):
             utils.logger.info('Ignoring because of ratelimit')
             return
 
+        # follow the user if he's new. if he does not follow back, he'll
+        # be unfollowed by followers.unfollow_my_unfollowers sometime later.
+        if not status.author.following:
+            try:
+                utils.logger.info('Following this user back.')
+                twitter.api.create_friendship(status.author.screen_name)
+            except tweepy.error.TweepError as e:
+                utils.logger.exception("I couldn't follow this user back.")
+
         try:
             if config['twitter']['auto_translate']['enabled']:
                 lang_from = config['twitter']['auto_translate']['from']
