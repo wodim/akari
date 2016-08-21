@@ -1,6 +1,7 @@
 from datetime import datetime
 from textwrap import fill
 import os
+import statistics
 
 from wand.color import Color
 from wand.drawing import Drawing
@@ -114,42 +115,46 @@ class Akari(object):
 def akari_cron():
     from twitter import twitter
 
+    ids = []
     # get a random line. will error out if there are none, which is okay.
     with open('pending.txt') as file:
-        ids = [int(x.split(' ')[0]) for x in file.read().splitlines()]
+        for line in file.read().splitlines():
+            id, text = line.split(' ', 1)
+            if len(text) < 50:
+                ids.append(id)
 
     # this function generates a score for each tweet
     def score(status):
         favs, followers = status.favorite_count, status.user.followers_count
-        # decay coefficient. promotes newer tweets to compensate for the lower
-        # amount of favs they have received (fewer people have seen them, in
-        # theory)
-        diff = (datetime.utcnow() - status.created_at).total_seconds()
-        decay_coeff = utils.decay(diff, 20 * 60, 3)
-        return decay_coeff * favs / followers
+        if followers < 1 or followers < median / 2:
+            return -1
+        else:
+            # decay coefficient. promotes newer tweets to compensate for the
+            # lower amount of favs they have received (fewer people have seen
+            # them, in theory)
+            diff = (datetime.utcnow() - status.created_at).total_seconds()
+            decay_coeff = utils.decay(diff, 20 * 60, 3)
+            return decay_coeff * favs / followers
 
     # 100 at a time is the max statuses_lookup() can do.
     statuses = []
     for i in range(0, len(ids), 100):
         group = ids[i:i + 100]
         statuses.extend(tuple(twitter.api.statuses_lookup(group)))
+    median = statistics.median(status.user.followers_count
+                               for status in statuses)
     statuses = sorted(statuses, key=score, reverse=True)
-
-    # tweets shorter than this will be posted verbatim
-    max_verbatim = 50
 
     # generate a new caption and try to find an image for each status
     for status in statuses:
         try:
             caption = utils.clean(status.text, urls=True, replies=True,
                                   rts=True)
-
-            if len(caption) <= max_verbatim:
-                utils.logger.info('Posting "{caption}" from {tweet_id}'
-                                  .format(caption=caption,
-                                          tweet_id=status.id))
-                akari = Akari(caption, type='animation')
-                break
+            utils.logger.info('Posting "{caption}" from {tweet_id}'
+                              .format(caption=caption,
+                                      tweet_id=status.id))
+            akari = Akari(caption, type='animation')
+            break
         except:
             utils.logger.exception('Error generating a caption.')
             continue
