@@ -126,7 +126,7 @@ def akari_cron():
     # this function generates a score for each tweet
     def score(status):
         favs, followers = status.favorite_count, status.user.followers_count
-        if followers < 1 or followers < median / 2:
+        if followers < 1 or followers < median:
             return -1
         else:
             # decay coefficient. promotes newer tweets to compensate for the
@@ -143,7 +143,7 @@ def akari_cron():
         statuses.extend(tuple(twitter.api.statuses_lookup(group)))
     median = statistics.median(status.user.followers_count
                                for status in statuses)
-    statuses = sorted(statuses, key=score, reverse=True)
+    statuses.sort(key=score, reverse=True)
 
     # generate a new caption and try to find an image for each status
     for status in statuses:
