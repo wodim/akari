@@ -89,24 +89,24 @@ def timedelta(time):
     elapsed = time
 
     if not time:
-        return 'unos momentos'
+        return 'a moment'
     elif time > 3600:
         elapsed //= 3600
         if elapsed == 1:
-            return 'una hora'
+            return 'one hour'
         else:
-            return str(elapsed) + ' horas'
+            return str(elapsed) + ' hours'
     elif time > 60:
         elapsed //= 60
         if elapsed == 1:
-            return 'un minuto'
+            return 'one minute'
         else:
-            return str(elapsed) + ' minutos'
+            return str(elapsed) + ' minutes'
     else:
         if elapsed == 1:
-            return 'un segundo'
+            return 'one second'
         else:
-            return str(elapsed) + ' segundos'
+            return str(elapsed) + ' seconds'
 
 
 def clean(text, replies=False, hashtags=False, rts=False, urls=False):

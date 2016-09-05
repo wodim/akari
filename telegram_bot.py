@@ -14,13 +14,13 @@ class TelegramBotException(Exception):
 
 
 class TelegramBot(telepot.aio.Bot):
-    HELP_MESSAGE = ('¡Hola! Soy Akari Endlösung.\n' +
-                    'Si quieres una imagen, sólo tienes que decirme qué ' +
-                    'quieres buscar.\n' +
-                    'También puedes pedirme imágenes en Twitter: ' +
+    HELP_MESSAGE = ("Hey! I'm Akari Endlösung.\n" +
+                    'If you want an image, just tell me what do you want me ' +
+                    'to search for.\n' +
+                    'You can also ask me to create GIFs for you on Twitter: ' +
                     'https://twitter.com/akari_endlosung')
-    INVALID_CMD = ('No sé lo que quieres decir. Si necesitas ayuda, escribe ' +
-                   '/help.')
+    INVALID_CMD = ("I don't know what you mean by that. If you need help, " +
+                   'use /help.')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,7 +49,7 @@ class TelegramBot(telepot.aio.Bot):
                     _msg = self.HELP_MESSAGE
                 else:
                     _msg = self.INVALID_CMD
-                await self.send_message(message, _msg)
+                await self.send_message(message, _msg, no_preview=True)
                 return
 
             # check rate limit
@@ -61,8 +61,7 @@ class TelegramBot(telepot.aio.Bot):
                             .format(longname=longname,
                                     reset=rate_limit['reset']))
                     utils.logging.warn(_msg)
-                    _msg = (('Echa el freno, Madaleno. Vuelve a intentarlo ' +
-                            'en {}.')
+                    _msg = (('Not so fast! Try again in {}.')
                             .format(utils.timedelta(rate_limit['reset'])))
                     await self.send_message(message, _msg)
                     return
@@ -74,7 +73,7 @@ class TelegramBot(telepot.aio.Bot):
                 akari = Akari(message['text'], type='still')
             except ImageSearchNoResultsException:
                 utils.logging.exception('Error searching for ' + longname)
-                await self.send_message(message, 'No hay resultados.')
+                await self.send_message(message, 'No results.')
                 return
 
             # then, if successful, send the pic
@@ -85,9 +84,10 @@ class TelegramBot(telepot.aio.Bot):
             utils.logging.exception('Error handling {longname} ({type})'
                                     .format(longname=longname,
                                             type=message['chat']['type']))
-            await self.send_message(message, 'Ha ocurrido un error.')
+            await self.send_message(message, 'Sorry, try again.')
 
-    async def send_message(self, message, caption, filename=None):
+    async def send_message(self, message, caption, filename=None,
+                           no_preview=False):
         if filename:
             caption = utils.ellipsis(caption, 200)
             with open(filename, 'rb') as f:
@@ -96,7 +96,8 @@ class TelegramBot(telepot.aio.Bot):
         else:
             caption = utils.ellipsis(caption, 4096)
             await self.sendMessage(message['chat']['id'],
-                                   caption)
+                                   caption,
+                                   disable_web_page_preview=no_preview)
 
     def format_name(self, message):
         longname = []
