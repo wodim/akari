@@ -91,21 +91,21 @@ class TwitterBot(tweepy.streaming.StreamListener):
             image = akari.filename
         except ImageSearchNoResultsException:
             utils.logger.exception('No results')
-            msgs = ('No he encontrado nada...',
-                    'No hay resultados.',
-                    'No entiendo nada.',
-                    'No sé lo que quieres.')
+            msgs = ('I found nothing.',
+                    'No results.',
+                    "I don't understand...",
+                    "I don't know what you mean by that.")
             text = random.choice(msgs)
             image = 'no-results.gif'
         except KeyboardInterrupt:
             raise
         except Exception as e:
             utils.logger.exception('Error composing the image')
-            msgs = ('No te oigo...',
-                    'Prueba de nuevo más tarde.',
-                    'Espera un rato y lo vuelves a intentar.',
-                    'Me pillas en un mal momento, mejor luego.')
-            text = random.choice(msgs)
+            msgs = ("Can't hear ya...",
+                    "Ooops, I'm a bit busy at the moment.",
+                    "I don't feel so well right now.",
+                    'Sorry, I fell asleep.')
+            text = random.choice(msgs) + ' Try again a bit later.'
             image = 'out-of-service.gif'
 
         # start building a reply. prepend @nick of whoever we are replying to
