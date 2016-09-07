@@ -2,6 +2,7 @@ from datetime import datetime
 from textwrap import fill
 import os
 import statistics
+import string
 
 from wand.color import Color
 from wand.drawing import Drawing
@@ -125,6 +126,11 @@ def akari_cron():
 
     # this function generates a score for each tweet
     def score(status):
+        # filter garbage. at least 70% of letters in the status must be
+        # /a-zA-Z/
+        meat = sum(c in string.ascii_letters for c in status.text) or -1
+        if meat / len(status.text) < 0.7:
+            return -1
         favs, followers = status.favorite_count, status.user.followers_count
         if followers < 1 or followers < median:
             return -1
