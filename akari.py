@@ -20,6 +20,10 @@ class AkariFailedToGenerateAkariException(Exception):
     pass
 
 
+class AkariWandIsRetardedException(Exception):
+    pass
+
+
 class Akari(object):
     def __init__(self, text, type='still'):
         self.text = text
@@ -31,6 +35,9 @@ class Akari(object):
                 return
             except AkariAnimationTooLargeException as e:
                 utils.logger.info('Composed an animation that is too big.')
+                continue
+            except AkariWandIsRetardedException as e:
+                utils.logger.info('Wand failed to save the animation.')
                 continue
 
         raise AkariFailedToGenerateAkariException('Could not generate an ' +
@@ -105,9 +112,14 @@ class Akari(object):
         result.close()
         bg_img.close()
 
-        if os.path.getsize(filename) > 3072 * 1024:
-            raise AkariAnimationTooLargeException('Composed an animation ' +
-                                                  'that is too big.')
+        try:
+            if os.path.getsize(filename) > 3072 * 1024:
+                raise AkariAnimationTooLargeException('Composed an ' +
+                                                      'animation that is ' +
+                                                      'too big.')
+        except FileNotFoundError:
+            raise AkariWandIsRetardedException('Wand failed to save the ' +
+                                               'animation.')
 
         self.filename = filename
         self.caption = caption
