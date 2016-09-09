@@ -44,25 +44,26 @@ class ImageSearch(object):
             response = s.get(url, auth=('', api_key), params=params,
                              timeout=3)
         except (requests.exceptions.RequestException, socket.timeout) as e:
-            raise ImageSearchException('Error al hacer la petición HTTP')
+            raise ImageSearchException('Error making an HTTP request')
 
         if response.status_code != requests.codes.ok:
-            utils.logger.warning('Response code not ok ({})'
-                                 .format(response.status_code))
-            raise ImageSearchException('No pude hacer la búsqueda: error {}'
-                                       .format(response.status_code))
+            msg = 'Response code not ok ({})'.format(response.status_code)
+            utils.logger.warning(msg)
+            raise ImageSearchException(msg)
 
         try:
             decoded_json = json.loads(response.text)
         except:
-            utils.logger.warning('Could not decode json response')
-            raise ImageSearchException('Error al decodificar el JSON.')
+            msg = 'Could not decode json response'
+            utils.logger.warning(msg)
+            raise ImageSearchException(msg)
 
         try:
             results = decoded_json['d']['results'][0]['Image']
         except KeyError:
-            utils.logger.warning('API response can not be parsed')
-            raise ImageSearchException('Me he quedado sin gasolina.')
+            msg = 'API response could not be parsed'
+            utils.logger.warning(msg)
+            raise ImageSearchException(msg)
 
         if len(results) > 0:
             # shuffle the results
@@ -132,5 +133,5 @@ class ImageSearch(object):
                 return
 
         utils.logger.warning('No results')
-        raise ImageSearchNoResultsException('No hay resultados para "{}".'
+        raise ImageSearchNoResultsException('No results found for "{}".'
                                             .format(text))

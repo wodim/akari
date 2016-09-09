@@ -163,8 +163,10 @@ def akari_cron():
                                for status in statuses)
     statuses.sort(key=score, reverse=True)
 
-    # generate a new caption and try to find an image for each status
-    for status in statuses:
+    # try to generate an image for the first status. if that fails, keep
+    # trying with the next one until you have succeeded or until you have
+    # run out of attempts.
+    for status in statuses[:10]:
         try:
             caption = utils.clean(status.text, urls=True, replies=True,
                                   rts=True)

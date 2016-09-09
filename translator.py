@@ -11,7 +11,7 @@ class TranslatorException(Exception):
 
 
 class Translator(object):
-    def __init__(self, text, lang_to, lang_from='es-ES'):
+    def __init__(self, text, lang_to, lang_from):
         url = 'http://mymemory.translated.net/api/ajaxfetch'
         params = {'q': text,
                   'langpair': lang_from + '|' + lang_to,
@@ -23,30 +23,34 @@ class Translator(object):
         try:
             response = requests.get(url, params, timeout=5)
         except (requests.exceptions.RequestException, socket.timeout) as e:
-            raise TranslatorException('Error al hacer la petición HTTP')
+            raise TranslatorException('Error making an HTTP request')
 
         try:
             decoded_json = json.loads(response.text)
+            translation = decoded_json['responseData']['translatedText']
         except:
-            utils.logger.warning('API response can not be decoded')
-            raise TranslatorException('Error al decodificar el JSON.')
-
-        self.translation = decoded_json['responseData']['translatedText']
+            msg = 'Could not decode json response'
+            utils.logger.warning(msg)
+            raise TranslatorException(msg)
 
         if decoded_json['responseStatus'] != 200:
             if 'IS AN INVALID TARGET LANGUAGE' in self.translation:
-                utils.logger.warning('Incorrect language ({})'
-                                     .format(decoded_json['responseStatus']))
-                raise TranslatorException('El idioma que has elegido no es ' +
-                                          'válido.')
+                msg = ('Incorrect language ({})'
+                       .format(decoded_json['responseStatus']))
+                utils.logger.warning(msg)
+                raise TranslatorException(msg)
             else:
-                utils.logger.warning('Response code not ok ({})'
-                                     .format(decoded_json['responseStatus']))
-                raise TranslatorException('Error al traducir.')
+                msg = ('Response code not ok ({})'
+                       .format(decoded_json['responseStatus']))
+                utils.logger.warning(msg)
+                raise TranslatorException(msg)
 
-        if len(self.translation.strip()) == 0:
-            utils.logger.warning('Unsupported language')
-            raise TranslatorException('No hay traducción para el texto.')
+        if len(translation.strip()) == 0:
+            msg = 'Unsupported language'
+            utils.logger.warning(msg)
+            raise TranslatorException(msg)
 
-        self.translation = html.unescape(self.translation)
-        self.translation = self.translation.replace('@ ', '@')
+        translation = html.unescape(translation)
+        translation = translation.replace('@ ', '@')
+
+        self.translation = translation
