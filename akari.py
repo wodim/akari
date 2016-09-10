@@ -25,18 +25,20 @@ class AkariWandIsRetardedException(Exception):
 
 
 class Akari(object):
-    def __init__(self, text, type='still'):
+    def __init__(self, text, type='still', **kwargs):
         self.text = text
-        self.type = type
+        self.caption = kwargs.get('caption', self.text)
+        self.image_path = kwargs.get('image_path')
+        self.type = type if type in ('still', 'animation') else 'still'
 
         for i in range(10):
             try:
                 self.compose()
                 return
-            except AkariAnimationTooLargeException as e:
+            except AkariAnimationTooLargeException:
                 utils.logger.info('Composed an animation that is too big.')
                 continue
-            except AkariWandIsRetardedException as e:
+            except AkariWandIsRetardedException:
                 utils.logger.info('Wand failed to save the animation.')
                 continue
 
@@ -44,15 +46,17 @@ class Akari(object):
                                                   'image.')
 
     def compose(self):
-        image = ImageSearch(self.text, max_size=10 * 1024 * 1024)
+        if not self.image_path:
+            image = ImageSearch(self.text, max_size=10 * 1024 * 1024)
+            self.image_path = utils.build_path(image.hash, 'original')
+
         # make hashtags searchable
-        if self.text[0] == '#':
+        if self.text.startswith('#'):
             self.text = ' ' + self.text
 
         width, height = 800, 600
 
-        filename = utils.build_path(image.hash, 'original')
-        with Image(filename=filename) as original:
+        with Image(filename=self.image_path) as original:
             # if it's an animation, take only the first frame
             if original.animation:
                 bg_img = Image(original.sequence[0])
@@ -82,7 +86,7 @@ class Akari(object):
             this_frame.composite(akari_frame, left=0, top=0)
 
             # then the caption on top of it
-            caption = 'わぁい{0} あかり{0}大好き'.format(self.text)
+            caption = 'わぁい{0}あかり{0}大好き'.format(self.text)
             draw = Drawing()
             draw.font = 'rounded-mgenplus-1c-bold.ttf'
             draw.font_size = 50
@@ -190,8 +194,8 @@ def akari_cron():
 
 
 # like akari_cron(), but it forces a certain caption to be published
-def akari_publish(text):
+def akari_publish(text, **kwargs):
     from twitter import twitter
 
-    akari = Akari(text, type='animation')
+    akari = Akari(text, **kwargs)
     twitter.post(status=akari.caption, media=akari.filename)
