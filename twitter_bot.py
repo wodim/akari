@@ -15,7 +15,6 @@ class StreamException(Exception):
 
 
 class TwitterBot(tweepy.streaming.StreamListener):
-    @utils.background
     def on_status(self, status):
         utils.logger.info('{id} - "{text}" by {screen_name} via {source}'
                           .format(id=status.id,
@@ -65,6 +64,12 @@ class TwitterBot(tweepy.streaming.StreamListener):
             utils.logger.info('Ignoring because of ratelimit')
             return
 
+        # so we'll generate something for this guy...
+        # this is in a function of its own with a "new thread" decorator
+        self.process(status, text)
+
+    @utils.background
+    def process(self, status, text):
         # follow the user if he's new. if he does not follow back, he'll
         # be unfollowed by followers.unfollow_my_unfollowers sometime later.
         if not status.author.following:
