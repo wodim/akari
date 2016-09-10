@@ -28,7 +28,6 @@ class Akari(object):
     def __init__(self, text, type='still', **kwargs):
         self.text = text
         self.caption = kwargs.get('caption', self.text)
-        self.image_path = kwargs.get('image_path')
         self.type = type if type in ('still', 'animation') else 'still'
 
         for i in range(10):
@@ -46,9 +45,7 @@ class Akari(object):
                                                   'image.')
 
     def compose(self):
-        if not self.image_path:
-            image = ImageSearch(self.text, max_size=10 * 1024 * 1024)
-            self.image_path = utils.build_path(image.hash, 'original')
+        image = ImageSearch(self.text, max_size=10 * 1024 * 1024)
 
         # make hashtags searchable
         if self.text.startswith('#'):
@@ -56,7 +53,8 @@ class Akari(object):
 
         width, height = 800, 600
 
-        with Image(filename=self.image_path) as original:
+        filename = utils.build_path(image.hash, 'original')
+        with Image(filename=filename) as original:
             # if it's an animation, take only the first frame
             if original.animation:
                 bg_img = Image(original.sequence[0])
