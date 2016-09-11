@@ -142,8 +142,10 @@ def akari_cron():
     def score(status):
         # filter garbage. at least 70% of letters in the status must be
         # /a-zA-Z/
-        meat = sum(c in string.ascii_letters for c in status.text) or -1
-        if meat / len(status.text) < 0.7:
+        clean_text = utils.clean(status.text, urls=True, replies=True,
+                                 rts=True)
+        meat = sum(c in string.ascii_letters for c in clean_text) or -1
+        if meat / len(clean_text) < 0.7:
             return -1
         favs, followers = status.favorite_count, status.user.followers_count
         if followers < 1 or followers < median:
