@@ -125,7 +125,7 @@ def clean(text, replies=False, hashtags=False, rts=False, urls=False):
         text = re.sub(r'#[a-zA-Z0-9_]+\s?', '', text)
 
     if urls:
-        text = re.sub(r'https?://.*\s?', '', text)
+        text = re.sub(r'https?://[\w\./]*\b', '', text)
 
     text = re.sub(r'\s+', ' ', text)
     text = text.strip()
