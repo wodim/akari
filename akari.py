@@ -147,7 +147,9 @@ def akari_cron():
         meat = sum(c in string.ascii_letters for c in clean_text) or -1
         if meat / len(clean_text) < 0.7:
             return -1
-        favs, followers = status.favorite_count, status.user.followers_count
+        favs = status.favorite_count
+        rts = status.retweet_count
+        followers = status.user.followers_count
         if followers < 1 or followers < median:
             return -1
         else:
@@ -156,7 +158,7 @@ def akari_cron():
             # them, in theory)
             diff = (datetime.utcnow() - status.created_at).total_seconds()
             decay_coeff = utils.decay(diff, 20 * 60, 3)
-            return decay_coeff * favs / followers
+            return decay_coeff * (favs + rts * 0.5) / followers
 
     # 100 at a time is the max statuses_lookup() can do.
     statuses = []
