@@ -33,6 +33,8 @@ class Akari(object):
         self.image_search = ImageSearch(self.text, shuffle_results)
 
         for i in range(10):
+            if i > 0:
+                utils.logger.warning('Warning: attempt ' + str(i + 1))
             try:
                 self.compose()
                 return
