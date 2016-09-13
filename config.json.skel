@@ -26,10 +26,19 @@
         "token": "",
         "rate_limit_exempt_chat_ids": []
     },
+    "image_search": {
+        "provider": "google",
+        "banned_sources": ["desmotivaciones.es",
+                           "akifrases.com",
+                           "cartelescreativos.com",
+                           "izquotes.com"]
+    },
+    "google": {
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:48.0) Gecko/20100101 Firefox/48.0"
+    },
     "bing": {
         "api_keys": [""],
         "market": "es-ES",
-        "banned_sources": ["desmotivaciones.es"],
         "adult": true
     }
 }

@@ -20,9 +20,49 @@ class ImageSearchNoResultsException(Exception):
     pass
 
 
-class ImageSearch(object):
-    def __init__(self, text, max_size=3072 * 1024):
-        utils.logger.info('Starting image search: "{}"'.format(text))
+class GoogleImageSearch(object):
+    def __init__(self, text):
+        utils.logger.info('Starting Google image search: "{}"'.format(text))
+
+        url = 'https://www.google.es/search'
+        params = {'tbm': 'isch', 'q': text}
+
+        try:
+            s = requests.session()
+            s.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
+            headers = {'User-Agent': config['google']['user_agent']}
+            response = s.get(url, params=params, headers=headers,
+                             timeout=3)
+        except (requests.exceptions.RequestException, socket.timeout) as e:
+            raise ImageSearchException('Error making an HTTP request')
+
+        if response.status_code != requests.codes.ok:
+            msg = 'Response code not ok ({})'.format(response.status_code)
+            utils.logger.warning(msg)
+            raise ImageSearchException(msg)
+
+        try:
+            from bs4 import BeautifulSoup
+            import re
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+            results_json = [json.loads(x.text) for x in
+                            soup.find_all(class_=re.compile('_meta$'))]
+        except Exception as e:
+            utils.logger.exception(e)
+            raise ImageSearchException('Could not decode response')
+
+        results = []
+        for result_json in results_json:
+            results.append({'image_url': result_json['ou'],
+                            'source_url': result_json['ru']})
+
+        self.results = results
+
+
+class BingImageSearch(object):
+    def __init__(self, text):
+        utils.logger.info('Starting Bing image search: "{}"'.format(text))
 
         # escape '
         text = text.replace("'", "''")
@@ -53,28 +93,48 @@ class ImageSearch(object):
 
         try:
             decoded_json = json.loads(response.text)
-        except:
-            msg = 'Could not decode json response'
-            utils.logger.warning(msg)
-            raise ImageSearchException(msg)
+        except Exception as e:
+            utils.logger.exception(e)
+            raise ImageSearchException('Could not decode response')
 
         try:
-            results = decoded_json['d']['results'][0]['Image']
+            results_json = decoded_json['d']['results'][0]['Image']
         except KeyError:
             msg = 'API response could not be parsed'
             utils.logger.warning(msg)
             raise ImageSearchException(msg)
 
+        results = []
+        for result_json in results_json:
+            results.append({'image_url': result_json['MediaUrl'],
+                            'source_url': result_json['SourceUrl']})
+
+        self.results = results
+
+
+class ImageSearch(object):
+    def __init__(self, text, provider=None, max_size=3072 * 1024):
+        if provider not in ('google', 'bing'):
+            if config['image_search']['provider'] in ('google', 'bing'):
+                provider = config['image_search']['provider']
+            else:
+                provider = 'google'
+
+        if provider == 'google':
+            results = GoogleImageSearch(text).results
+        elif provider == 'bing':
+            results = BingImageSearch(text).results
+
         if len(results) > 0:
             # shuffle the results
             random.shuffle(results)
             for result in results:
-                image_url = result['MediaUrl']
-                source_url = result['SourceUrl']
+                image_url = result['image_url']
+                source_url = result['source_url']
 
                 # check if the source is banned and, in that case, ignore it
                 if any(x in source_url
-                       for x in config['bing']['banned_sources']):
+                       for x in config['image_search']['banned_sources']):
                     utils.logger.info('Skipping banned source: ' + source_url)
                     continue
 
