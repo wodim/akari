@@ -49,8 +49,9 @@ class GoogleImageSearch(object):
             results_json = [json.loads(x.text) for x in
                             soup.find_all(class_=re.compile('_meta$'))]
         except Exception as e:
-            utils.logger.exception(e)
-            raise ImageSearchException('Could not decode response')
+            msg = 'Could not decode response'
+            utils.logger.exception(msg)
+            raise ImageSearchException(msg)
 
         results = []
         for result_json in results_json:
@@ -94,8 +95,9 @@ class BingImageSearch(object):
         try:
             decoded_json = json.loads(response.text)
         except Exception as e:
-            utils.logger.exception(e)
-            raise ImageSearchException('Could not decode response')
+            msg = 'Could not decode response'
+            utils.logger.exception(msg)
+            raise ImageSearchException(msg)
 
         try:
             results_json = decoded_json['d']['results'][0]['Image']
@@ -121,7 +123,12 @@ class ImageSearch(object):
                 provider = 'google'
 
         if provider == 'google':
-            results = GoogleImageSearch(text).results
+            try:
+                results = GoogleImageSearch(text).results
+            except ImageSearchException as e:
+                msg = 'Failed to search using Google, will fall back to Bing'
+                utils.logger.exception(msg)
+                results = BingImageSearch(text).results
         elif provider == 'bing':
             results = BingImageSearch(text).results
 
