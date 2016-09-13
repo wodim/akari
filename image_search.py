@@ -113,7 +113,7 @@ class BingImageSearch(object):
 
 
 class ImageSearch(object):
-    def __init__(self, text, provider=None, max_size=3072 * 1024):
+    def __init__(self, text, provider=None, max_size=10 * 1024 * 1024):
         if provider not in ('google', 'bing'):
             if config['image_search']['provider'] in ('google', 'bing'):
                 provider = config['image_search']['provider']

@@ -30,12 +30,16 @@ class Akari(object):
         self.caption = kwargs.get('caption', self.text)
         self.type = type if type in ('still', 'animation') else 'still'
 
+        self.image_search = ImageSearch(self.text)
+
         for i in range(10):
             try:
                 self.compose()
                 return
             except AkariAnimationTooLargeException:
                 utils.logger.info('Composed an animation that is too big.')
+                # find another image
+                self.image_search = ImageSearch(self.text)
                 continue
             except AkariWandIsRetardedException:
                 utils.logger.info('Wand failed to save the animation.')
@@ -45,8 +49,6 @@ class Akari(object):
                                                   'image.')
 
     def compose(self):
-        image = ImageSearch(self.text, max_size=10 * 1024 * 1024)
-
         utils.logger.info('Starting to compose Akari...')
 
         # make hashtags searchable
@@ -55,7 +57,7 @@ class Akari(object):
 
         width, height = 800, 600
 
-        filename = utils.build_path(image.hash, 'original')
+        filename = utils.build_path(self.image_search.hash, 'original')
         with Image(filename=filename) as original:
             # if it's an animation, take only the first frame
             if original.animation:
@@ -113,7 +115,7 @@ class Akari(object):
             this_frame.close()
 
         # save the result
-        filename = utils.build_path(image.hash, self.type)
+        filename = utils.build_path(self.image_search.hash, self.type)
         result.save(filename=filename)
 
         draw.destroy()
