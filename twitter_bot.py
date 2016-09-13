@@ -16,12 +16,6 @@ class StreamException(Exception):
 
 class TwitterBot(tweepy.streaming.StreamListener):
     def on_status(self, status):
-        utils.logger.info('{id} - "{text}" by {screen_name} via {source}'
-                          .format(id=status.id,
-                                  text=utils.clean(status.text),
-                                  screen_name=status.author.screen_name,
-                                  source=status.source))
-
         # ignore yourself
         if status.author.screen_name == twitter.me.screen_name:
             return
@@ -55,17 +49,20 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # ignore people with less than X followers
         if status.author.followers_count < 25:
-            utils.logger.info('Ignoring because of low follower count')
+            utils.logger.info(('{id} - Ignoring because of low follower count'
+                               .format(id=int(status.id))))
             return
 
         # check ratelimit
         rate_limit = utils.rate_limit.hit('twitter', 'global', 1, 3)
         if not rate_limit['allowed']:
-            utils.logger.info('Ignoring because of ratelimit')
+            utils.logger.info(('{id} - Ignoring because of ratelimit'
+                               .format(id=int(status.id))))
             return
 
         # so we'll generate something for this guy...
         # this is in a function of its own with a "new thread" decorator
+        self.print_status(status)
         self.process(status, text)
 
     @utils.background
@@ -126,6 +123,13 @@ class TwitterBot(tweepy.streaming.StreamListener):
             raise
         except Exception as e:
             utils.logger.exception('Error posting.')
+
+    def print_status(self, status):
+        utils.logger.info('{id} - "{text}" by {screen_name} via {source}'
+                          .format(id=status.id,
+                                  text=utils.clean(status.text),
+                                  screen_name=status.author.screen_name,
+                                  source=status.source))
 
     def on_error(self, status_code):
         utils.logger.warning('An error has occured! Status code = {}'
