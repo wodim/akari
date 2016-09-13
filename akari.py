@@ -47,6 +47,8 @@ class Akari(object):
     def compose(self):
         image = ImageSearch(self.text, max_size=10 * 1024 * 1024)
 
+        utils.logger.info('Starting to compose Akari...')
+
         # make hashtags searchable
         if self.text.startswith('#'):
             self.text = ' ' + self.text
@@ -75,6 +77,18 @@ class Akari(object):
             # this will be the image we will append the frames to
             result = Image()
 
+        # generate an image with the caption text that will be applied
+        # to each frame.
+        caption = 'わぁい{0}あかり{0}大好き'.format(self.text)
+        draw = Drawing()
+        draw.font = 'rounded-mgenplus-1c-bold.ttf'
+        draw.font_size = 50
+        draw.fill_color = Color('#fff')
+        draw.stroke_color = Color('#000')
+        draw.stroke_width = 1
+        draw.gravity = 'south'
+        draw.text(0, 0, fill(caption, 20))
+
         for mask in masks:
             # take the background image
             this_frame = Image(bg_img)
@@ -83,16 +97,7 @@ class Akari(object):
             akari_frame = Image(filename=mask)
             this_frame.composite(akari_frame, left=0, top=0)
 
-            # then the caption on top of it
-            caption = 'わぁい{0}あかり{0}大好き'.format(self.text)
-            draw = Drawing()
-            draw.font = 'rounded-mgenplus-1c-bold.ttf'
-            draw.font_size = 50
-            draw.fill_color = Color('#fff')
-            draw.stroke_color = Color('#000')
-            draw.stroke_width = 1
-            draw.gravity = 'south'
-            draw.text(0, 0, fill(caption, 20))
+            # draw the caption on this frame
             draw(this_frame)
 
             if self.type == 'still':
@@ -111,6 +116,7 @@ class Akari(object):
         filename = utils.build_path(image.hash, self.type)
         result.save(filename=filename)
 
+        draw.destroy()
         result.close()
         bg_img.close()
 
@@ -123,6 +129,8 @@ class Akari(object):
             raise AkariWandIsRetardedException('Wand failed to save the ' +
                                                'animation.')
 
+        utils.logger.info(('Akari composed and saved as "{filename}"'
+                           .format(filename=filename)))
         self.filename = filename
         self.caption = caption
 
