@@ -91,7 +91,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
                 except TranslatorException as e:
                     utils.logger.exception('Error translating.')
 
-            akari = Akari(text, type='animation')
+            akari = Akari(text, type='animation', shuffle_results=True)
             text = akari.caption
             image = akari.filename
         except ImageSearchNoResultsException:

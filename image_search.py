@@ -115,7 +115,8 @@ class BingImageSearch(object):
 
 
 class ImageSearch(object):
-    def __init__(self, text, provider=None, max_size=10 * 1024 * 1024):
+    def __init__(self, text, provider=None, max_size=10 * 1024 * 1024,
+                 shuffle_results=False):
         if provider not in ('google', 'bing'):
             if config['image_search']['provider'] in ('google', 'bing'):
                 provider = config['image_search']['provider']
@@ -134,7 +135,9 @@ class ImageSearch(object):
 
         if len(results) > 0:
             # shuffle the results
-            random.shuffle(results)
+            if shuffle_results:
+                random.shuffle(results)
+
             for result in results:
                 image_url = result['image_url']
                 source_url = result['source_url']

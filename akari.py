@@ -25,12 +25,12 @@ class AkariWandIsRetardedException(Exception):
 
 
 class Akari(object):
-    def __init__(self, text, type='still', **kwargs):
+    def __init__(self, text, type='still', shuffle_results=False, **kwargs):
         self.text = text
         self.caption = kwargs.get('caption', self.text)
         self.type = type if type in ('still', 'animation') else 'still'
 
-        self.image_search = ImageSearch(self.text)
+        self.image_search = ImageSearch(self.text, shuffle_results)
 
         for i in range(10):
             try:
@@ -39,7 +39,7 @@ class Akari(object):
             except AkariAnimationTooLargeException:
                 utils.logger.info('Composed an animation that is too big.')
                 # find another image
-                self.image_search = ImageSearch(self.text)
+                self.image_search = ImageSearch(self.text, shuffle_results)
                 continue
             except AkariWandIsRetardedException:
                 utils.logger.info('Wand failed to save the animation.')
@@ -189,7 +189,7 @@ def akari_cron():
             utils.logger.info('Posting "{caption}" from {tweet_id}'
                               .format(caption=caption,
                                       tweet_id=status.id))
-            akari = Akari(caption, type='animation')
+            akari = Akari(caption, type='animation', shuffle_results=False)
             break
         except:
             utils.logger.exception('Error generating a caption.')
