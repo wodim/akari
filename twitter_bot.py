@@ -54,7 +54,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # check ratelimit
-        rate_limit = utils.rate_limit.hit('twitter', 'global', 1, 3)
+        rate_limit = utils.rate_limit.hit('twitter', 'global', 3, 5)
         if not rate_limit['allowed']:
             utils.logger.info(('{id} - Ignoring because of ratelimit'
                                .format(id=int(status.id))))

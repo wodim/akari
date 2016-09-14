@@ -1,10 +1,10 @@
 import json
 import os
 import random
-import requests
 import socket
 import uuid
 
+import requests
 from wand.exceptions import CorruptImageError
 from wand.image import Image
 
@@ -79,7 +79,7 @@ class BingImageSearch(object):
         try:
             # choose a random api key. keys that start with * are disabled.
             api_key = random.choice([x for x in config['bing']['api_keys']
-                                    if not x.startswith('*')])
+                                     if not x.startswith('*')])
             s = requests.session()
             s.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
             response = s.get(url, auth=('', api_key), params=params,
