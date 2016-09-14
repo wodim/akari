@@ -83,7 +83,7 @@ class Akari(object):
 
         # generate an image with the caption text that will be applied
         # to each frame.
-        caption = 'わぁい{0}あかり{0}大好き'.format(self.text)
+        caption = 'わぁい{0} あかり{0}大好き'.format(self.text)
         draw = Drawing()
         draw.font = 'rounded-mgenplus-1c-bold.ttf'
         draw.font_size = 50
