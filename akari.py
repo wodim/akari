@@ -54,7 +54,7 @@ class Akari(object):
         utils.logger.info('Starting to compose Akari...')
 
         # make hashtags searchable
-        if self.text.startswith('#'):
+        if '#' in self.text:
             self.text = ' ' + self.text + ' '
 
         width, height = 800, 600
