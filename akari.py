@@ -32,7 +32,7 @@ class Akari(object):
 
         self.image_search = ImageSearch(self.text, shuffle_results)
 
-        for i in range(10):
+        for i in range(3):
             if i > 0:
                 utils.logger.warning('Warning: attempt ' + str(i + 1))
             try:
@@ -170,7 +170,7 @@ def akari_cron():
             # them, in theory)
             diff = (datetime.utcnow() - status.created_at).total_seconds()
             decay_coeff = utils.decay(diff, 20 * 60, 3)
-            return decay_coeff * (favs + rts * 0.5) / followers
+            return decay_coeff * (favs + rts * 1.5) / followers
 
     # 100 at a time is the max statuses_lookup() can do.
     statuses = []
