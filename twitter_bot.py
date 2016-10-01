@@ -4,6 +4,7 @@ import tweepy
 
 from akari import Akari
 from config import config
+from followers import is_eligible
 from image_search import ImageSearchNoResultsException
 from translator import Translator, TranslatorException
 from twitter import twitter
@@ -69,7 +70,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
     def process(self, status, text):
         # follow the user if he's new. if he does not follow back, he'll
         # be unfollowed by followers.unfollow_my_unfollowers sometime later.
-        if not status.author.following:
+        if is_eligible(status.author):
             try:
                 utils.logger.info('Following this user back.')
                 twitter.api.create_friendship(status.author.screen_name)
