@@ -1,4 +1,9 @@
 {
+    "akari": {
+        "animation_frames": "images/akari/frames/",
+        "still_frame": "images/akari/frames/frame-8.png",
+        "caption_type": "akari"
+    },
     "twitter": {
         "consumer_key": "",
         "consumer_secret": "",
@@ -20,7 +25,9 @@
         "text_blacklist": [""],
         "auto_translate": {"enabled": false,
                            "from": "es-ES",
-                           "to": "en-US"}
+                           "to": "en-US"},
+        "no_results_image": "images/akari/no-results.gif",
+        "error_image": "images/akari/out-of-service.gif"
     },
     "telegram": {
         "token": "",

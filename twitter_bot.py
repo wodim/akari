@@ -99,7 +99,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
                     "I don't understand...",
                     "I don't know what you mean by that.")
             text = random.choice(msgs)
-            image = 'no-results.gif'
+            image = config['twitter']['no_results_image']
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -109,7 +109,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
                     "I don't feel so well right now.",
                     'Sorry, I fell asleep.')
             text = random.choice(msgs) + ' Try again a bit later.'
-            image = 'out-of-service.gif'
+            image = config['twitter']['error_image']
 
         # start building a reply. prepend @nick of whoever we are replying to
         reply = '@' + status.author.screen_name

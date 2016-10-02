@@ -8,6 +8,7 @@ from wand.color import Color
 from wand.drawing import Drawing
 from wand.image import Image
 
+from config import config
 from image_search import ImageSearch
 import utils
 
@@ -57,8 +58,19 @@ class Akari(object):
         if '#' in self.text:
             self.text = ' ' + self.text + ' '
 
-        width, height = 800, 600
+        # generate the list of masks, and hold them in memory.
+        if self.type == 'still':
+            masks = (config['akari']['still_frame'],)
+        elif self.type == 'animation':
+            path = config['akari']['animation_frames']
+            masks = sorted([path + x for x in os.listdir(path)])
+            # if there's only one frame here, it's not an animation
+            if len(masks) == 1:
+                self.type = 'still'
+        akari_frames = [Image(filename=x) for x in masks]
+        width, height = akari_frames[0].width, akari_frames[0].height
 
+        # now, get the background image
         filename = utils.build_path(self.image_search.hash, 'original')
         with Image(filename=filename) as original:
             # if it's an animation, take only the first frame
@@ -66,61 +78,50 @@ class Akari(object):
                 bg_img = Image(original.sequence[0])
             else:
                 bg_img = Image(original)
-
-        # remove the alpha channel
+        # remove the alpha channel, if any
         bg_img.alpha_channel = False
-
-        # resize
+        # resize it
         bg_img.transform(resize='{}x{}^'.format(width, height))
         bg_img.crop(width=width, height=height, gravity='center')
 
-        if self.type == 'still':
-            masks = ('masks/still.png',)
-        elif self.type == 'animation':
-            masks = sorted(['frames/' + x for x in os.listdir('frames')])
-            # this will be the image we will append the frames to
-            result = Image()
+        # generate the drawing to be applied to each frame
+        if config['akari']['caption_type'] == 'seinfeld':
+            caption, drawing = self.caption_seinfeld()
+        else:
+            caption, drawing = self.caption_akari()
 
-        # generate an image with the caption text that will be applied
-        # to each frame.
-        caption = 'わぁい{0} あかり{0}大好き'.format(self.text)
-        draw = Drawing()
-        draw.font = 'rounded-mgenplus-1c-bold.ttf'
-        draw.font_size = 50
-        draw.fill_color = Color('#fff')
-        draw.stroke_color = Color('#000')
-        draw.stroke_width = 1
-        draw.gravity = 'south'
-        draw.text(0, 0, fill(caption, 20))
-
-        for mask in masks:
+        result = Image()
+        for akari_frame in akari_frames:
             # take the background image
             this_frame = Image(bg_img)
 
             # put akari on top of it
-            akari_frame = Image(filename=mask)
             this_frame.composite(akari_frame, left=0, top=0)
 
             # draw the caption on this frame
-            draw(this_frame)
+            drawing(this_frame)
 
-            if self.type == 'still':
+            if len(masks) == 1:
                 # we are done already
                 result = Image(this_frame)
-            elif self.type == 'animation':
+            else:
                 # add the frame to the result image
                 result.sequence.append(this_frame)
                 with result.sequence[-1]:
                     result.sequence[-1].delay = 10
-
+            # close the mask file
             akari_frame.close()
+            # remove this frame from memory (it's in the sequence already)
             this_frame.close()
 
         # save the result
         filename = utils.build_path(self.image_search.hash, self.type)
         result.save(filename=filename)
 
-        draw.destroy()
+        # destroy everything
+        drawing.destroy()
+        for frame in result.sequence:
+            frame.destroy()
         result.close()
         bg_img.close()
 
@@ -137,6 +138,33 @@ class Akari(object):
                            .format(filename=filename)))
         self.filename = filename
         self.caption = caption
+
+    def caption_akari(self):
+        caption = 'わぁい{0} あかり{0}大好き'.format(self.text)
+        drawing = Drawing()
+        drawing.font = 'assets/fonts/rounded-mgenplus-1c-bold.ttf'
+        drawing.font_size = 50
+        drawing.fill_color = Color('#fff')
+        drawing.stroke_color = Color('#000')
+        drawing.stroke_width = 1
+        drawing.gravity = 'south'
+        drawing.text(0, 0, fill(caption, 20))
+        return caption, drawing
+
+    def caption_seinfeld(self):
+        caption = self.text
+        drawing = Drawing()
+        drawing.font = 'assets/fonts/NimbusSanL-RegIta.otf'
+        drawing.font_size = 90
+        drawing.fill_color = Color('#000')
+        drawing.translate(10, 100)
+        for i in range(8):
+            drawing.translate(-1, 1)
+            drawing.gravity = 'south'
+            drawing.text(0, 0, fill(caption, int(drawing.font_size // 3)))
+        drawing.fill_color = Color('#fff')
+        drawing.text(0, 0, fill(caption, int(drawing.font_size // 3)))
+        return caption, drawing
 
 
 def akari_cron():
