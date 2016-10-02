@@ -1,9 +1,11 @@
 import json
 import os
 import random
+import re
 import socket
 import uuid
 
+from bs4 import BeautifulSoup
 import requests
 from wand.exceptions import CorruptImageError
 from wand.image import Image
@@ -42,9 +44,6 @@ class GoogleImageSearch(object):
             raise ImageSearchException(msg)
 
         try:
-            from bs4 import BeautifulSoup
-            import re
-
             soup = BeautifulSoup(response.text, 'html.parser')
             results_json = [json.loads(x.text) for x in
                             soup.find_all(class_=re.compile('_meta$'))]
