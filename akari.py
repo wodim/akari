@@ -126,7 +126,7 @@ class Akari(object):
         bg_img.close()
 
         try:
-            if os.path.getsize(filename) > 3072 * 1024:
+            if os.path.getsize(filename) > 5 * 1024 * 1024:
                 raise AkariAnimationTooLargeException('Composed an ' +
                                                       'animation that is ' +
                                                       'too big.')
