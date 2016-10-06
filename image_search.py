@@ -54,8 +54,7 @@ class GoogleImageSearch(object):
 
         results = []
         for result_json in results_json:
-            results.append({'image_url': result_json['ou'],
-                            'source_url': result_json['ru']})
+            results.append((result_json['ou'], result_json['ru']))
 
         self.results = results
 
@@ -107,15 +106,15 @@ class BingImageSearch(object):
 
         results = []
         for result_json in results_json:
-            results.append({'image_url': result_json['MediaUrl'],
-                            'source_url': result_json['SourceUrl']})
+            results.append((result_json['MediaUrl'], result_json['SourceUrl']))
 
         self.results = results
 
 
 class ImageSearch(object):
-    def __init__(self, text, provider=None, max_size=10 * 1024 * 1024,
-                 shuffle_results=False):
+    def __init__(self, text, provider=None):
+        self.results = []
+
         if provider not in ('google', 'bing'):
             if config['image_search']['provider'] in ('google', 'bing'):
                 provider = config['image_search']['provider']
@@ -132,75 +131,77 @@ class ImageSearch(object):
         elif provider == 'bing':
             results = BingImageSearch(text).results
 
-        if len(results) > 0:
-            # shuffle the results
-            if shuffle_results:
-                random.shuffle(results)
+        if len(results) == 0:
+            utils.logger.warning('No results')
+            raise ImageSearchNoResultsException('No results found for "{}".'
+                                                .format(text))
 
-            for result in results:
-                image_url = result['image_url']
-                source_url = result['source_url']
+        for image_url, source_url in results:
+            # check if the source is banned and, in that case, ignore it
+            if any(x in source_url
+                    for x in config['image_search']['banned_sources']):
+                continue
 
-                # check if the source is banned and, in that case, ignore it
-                if any(x in source_url
-                       for x in config['image_search']['banned_sources']):
-                    utils.logger.info('Skipping banned source: ' + source_url)
-                    continue
+            self.results.append(ImageSearchResult(image_url, source_url, text))
 
-                try:
-                    utils.logger.info(('Downloading image "{image_url}" ' +
-                                       'from "{source_url}"')
-                                      .format(image_url=image_url,
-                                              source_url=source_url))
-                    # fake the referrer
-                    response = requests.get(image_url,
-                                            headers={'Referer': source_url},
-                                            timeout=5)
-                except (requests.exceptions.RequestException,
-                        socket.timeout) as e:
-                    # if the download times out, try with the next result
-                    continue
 
-                # if the download fails (404, ...), try with the next result
-                if response.status_code != requests.codes.ok:
-                    utils.logger.warning('Download of image failed')
-                    continue
+class ImageResultErrorException(Exception):
+    pass
 
-                self.hash = str(uuid.uuid4())
 
-                # store the image
-                filename = utils.build_path(self.hash, 'original')
-                utils.logger.info('Saving image to "{filename}"'
-                                  .format(filename=filename))
-                with open(filename, 'wb') as handle:
-                    for block in response.iter_content(1048576):
-                        if not block:
-                            break
-                        handle.write(block)
-                    handle.close()
+class ImageSearchResult(object):
+    def __init__(self, image_url, source_url, text):
+        self.image_url = image_url
+        self.source_url = source_url
+        self.text = text
+        self.hash = str(uuid.uuid4())
 
-                # and a metadata file to know where it came from
-                metafile = utils.build_path(self.hash, 'meta')
-                with open(metafile, 'w') as handle:
-                    handle.write('url:\t' + image_url + '\n')
-                    handle.write('source:\t' + source_url + '\n')
-                    handle.write('query:\t' + text + '\n')
+        self.filename = None  # will be populated after calling .download()
 
-                # if it's not an image (referrer trap, catch-all html 404...)
-                # or if it's too big, try with the next result
-                try:
-                    Image(filename=filename)
-                except CorruptImageError as e:
-                    utils.logger.warning('Not an image')
-                    continue
+    def download(self):
+        try:
+            utils.logger.info(('Downloading image "{image_url}" ' +
+                               'from "{source_url}"')
+                              .format(image_url=self.image_url,
+                                      source_url=self.source_url))
+            # fake the referrer
+            response = requests.get(self.image_url,
+                                    headers={'Referer': self.source_url},
+                                    timeout=5)
+        except (requests.exceptions.RequestException, socket.timeout) as e:
+            # if the download times out, try with the next result
+            raise ImageResultErrorException('Timed out')
 
-                if os.stat(filename).st_size > max_size:
-                    utils.logger.warning('Image too big')
-                    continue
+        # if the download fails (404, ...), try with the next result
+        if response.status_code != requests.codes.ok:
+            raise ImageResultErrorException('Download of image failed')
 
-                utils.logger.info('Complete')
-                return
+        # store the image
+        filename = utils.build_path(self.hash, 'original')
+        utils.logger.info('Saving image to "{filename}"'
+                          .format(filename=filename))
+        with open(filename, 'wb') as handle:
+            for block in response.iter_content(1048576):
+                if not block:
+                    break
+                handle.write(block)
+            handle.close()
 
-        utils.logger.warning('No results')
-        raise ImageSearchNoResultsException('No results found for "{}".'
-                                            .format(text))
+        # and a metadata file to know where it came from
+        metafile = utils.build_path(self.hash, 'meta')
+        with open(metafile, 'w') as handle:
+            handle.write('url:\t' + self.image_url + '\n')
+            handle.write('source:\t' + self.source_url + '\n')
+            handle.write('query:\t' + self.text + '\n')
+
+        # if it's not an image (referrer trap, catch-all html 404...)
+        # or if it's too big, try with the next result
+        try:
+            Image(filename=filename)  # try to get Wand to load it as an image
+        except CorruptImageError as e:
+            ImageResultErrorException('Not an image')
+
+        if os.stat(filename).st_size > 25 * 1024 * 1024:
+            ImageResultErrorException('Image too big')
+
+        utils.logger.info('Complete')

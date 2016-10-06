@@ -1,6 +1,7 @@
 from datetime import datetime
 from textwrap import fill
 import os
+import random
 import statistics
 import string
 
@@ -9,7 +10,7 @@ from wand.drawing import Drawing
 from wand.image import Image
 
 from config import config
-from image_search import ImageSearch
+from image_search import ImageSearch, ImageResultErrorException
 import utils
 
 
@@ -31,27 +32,36 @@ class Akari(object):
         self.caption = kwargs.get('caption', self.text)
         self.type = type if type in ('still', 'animation') else 'still'
 
-        self.image_search = ImageSearch(self.text, shuffle_results)
+        results = ImageSearch(self.text).results[:5]
+        if shuffle_results:
+            random.shuffle(results)
 
-        for i in range(3):
-            if i > 0:
-                utils.logger.warning('Warning: attempt ' + str(i + 1))
+        for result in results:
+            # first, download the result. if it fails, continue for the next
             try:
-                self.compose()
-                return
-            except AkariAnimationTooLargeException:
-                utils.logger.info('Composed an animation that is too big.')
-                # find another image
-                self.image_search = ImageSearch(self.text, shuffle_results)
+                result.download()
+            except ImageResultErrorException as e:
+                utils.logger.info('Error downloading this result: ' + str(e))
                 continue
-            except AkariWandIsRetardedException:
-                utils.logger.info('Wand failed to save the animation.')
-                continue
+
+            # then, compose it. 3 tries, in case Wand acts funny.
+            for i in range(3):
+                try:
+                    self.compose(result.hash)
+                    return
+                except AkariAnimationTooLargeException:
+                    utils.logger.info('Composed an animation that is too big.')
+                    # a retry would generate the same gif with the same
+                    # problem, so don't do that. go for the next result.
+                    break
+                except AkariWandIsRetardedException:
+                    # this, we want to retry it
+                    utils.logger.info('Wand failed to save the animation.')
 
         raise AkariFailedToGenerateAkariException('Could not generate an ' +
                                                   'image.')
 
-    def compose(self):
+    def compose(self, image_hash):
         utils.logger.info('Starting to compose Akari...')
 
         # make hashtags searchable
@@ -71,7 +81,7 @@ class Akari(object):
         width, height = akari_frames[0].width, akari_frames[0].height
 
         # now, get the background image
-        filename = utils.build_path(self.image_search.hash, 'original')
+        filename = utils.build_path(image_hash, 'original')
         with Image(filename=filename) as original:
             # if it's an animation, take only the first frame
             if original.animation:
@@ -115,7 +125,7 @@ class Akari(object):
             this_frame.close()
 
         # save the result
-        filename = utils.build_path(self.image_search.hash, self.type)
+        filename = utils.build_path(image_hash, self.type)
         result.save(filename=filename)
 
         # destroy everything
