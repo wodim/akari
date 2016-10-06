@@ -32,6 +32,8 @@ class Twitter(object):
             utils.logger.info('Posting "{}"'.format(status))
             self.api.update_status(status, **kwargs)
 
+        utils.logger.info('Status posted successfully!')
+
 
 twitter = Twitter(config['twitter']['consumer_key'],
                   config['twitter']['consumer_secret'],
