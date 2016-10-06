@@ -49,7 +49,9 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # ignore people with less than X followers
-        if status.author.followers_count < 25:
+        rate_limit_slow = utils.rate_limit.hit('twitter', 'global_slow', 5, 60)
+        if (status.author.followers_count < 25 and
+                not rate_limit_slow['allowed']):
             utils.logger.info(('{id} - Ignoring because of low follower count'
                                .format(id=int(status.id))))
             return
