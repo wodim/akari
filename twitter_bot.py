@@ -72,10 +72,9 @@ class TwitterBot(tweepy.streaming.StreamListener):
         # be unfollowed by followers.unfollow_my_unfollowers sometime later.
         if is_eligible(status.author):
             try:
-                utils.logger.info('Following this user back.')
                 twitter.api.create_friendship(status.author.screen_name)
             except tweepy.error.TweepError as e:
-                utils.logger.exception("I couldn't follow this user back.")
+                pass
 
         try:
             if config['twitter']['auto_translate']['enabled']:
