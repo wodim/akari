@@ -199,9 +199,9 @@ class ImageSearchResult(object):
         try:
             Image(filename=filename)  # try to get Wand to load it as an image
         except CorruptImageError as e:
-            ImageResultErrorException('Not an image')
+            raise ImageResultErrorException('Not an image')
 
         if os.stat(filename).st_size > 25 * 1024 * 1024:
-            ImageResultErrorException('Image too big')
+            raise ImageResultErrorException('Image too big')
 
         utils.logger.info('Complete')
