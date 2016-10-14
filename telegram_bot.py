@@ -14,11 +14,11 @@ class TelegramBotException(Exception):
 
 
 class TelegramBot(telepot.aio.Bot):
-    HELP_MESSAGE = ("Hey! I'm Akari Endlösung.\n" +
+    HELP_MESSAGE = ("Hey! I'm Akari Shoah.\n" +
                     'If you want an image, just tell me what do you want me ' +
                     'to search for.\n' +
                     'You can also ask me to create GIFs for you on Twitter: ' +
-                    'https://twitter.com/akari_endlosung')
+                    'https://twitter.com/akari_shoah')
     INVALID_CMD = ("I don't know what you mean by that. If you need help, " +
                    'use /help.')
 
