@@ -190,25 +190,28 @@ def akari_cron():
 
     # this function generates a score for each tweet
     def score(status):
-        # filter garbage. at least 70% of letters in the status must be
-        # /a-zA-Z/
-        clean_text = utils.clean(status.text, urls=True, replies=True,
-                                 rts=True)
-        meat = sum(c in string.ascii_letters for c in clean_text) or -1
-        if meat / len(clean_text) < 0.7:
-            return -1
         favs = status.favorite_count
         rts = status.retweet_count
         followers = status.user.followers_count
         if followers < 1 or followers < median:
             return -1
-        else:
-            # decay coefficient. promotes newer tweets to compensate for the
-            # lower amount of favs they have received (fewer people have seen
-            # them, in theory)
-            diff = (datetime.utcnow() - status.created_at).total_seconds()
-            decay_coeff = utils.decay(diff, 20 * 60, 3)
-            return decay_coeff * (favs + rts * 1.5) / followers
+
+        # decay coefficient. promotes newer tweets to compensate for the
+        # lower amount of favs they have received (fewer people have seen
+        # them, in theory)
+        diff = (datetime.utcnow() - status.created_at).total_seconds()
+        score = utils.decay(diff, 20 * 60, 3)
+        score *= (favs + rts * 1.5) / followers
+
+        # filter garbage. at least 70% of letters in the status must be
+        # /a-zA-Z/, or there's a big penalty
+        clean_text = utils.clean(status.text, urls=True, replies=True,
+                                 rts=True)
+        meat = sum(c in string.ascii_letters for c in clean_text) or -1
+        if meat / len(clean_text) < 0.7:
+            score /= 2
+
+        return score
 
     # 100 at a time is the max statuses_lookup() can do.
     statuses = []
