@@ -209,7 +209,7 @@ def akari_cron():
                                  rts=True)
         meat = sum(c in string.ascii_letters for c in clean_text) or -1
         if meat / len(clean_text) < 0.7:
-            score /= 2
+            score /= 10
 
         return score
 
