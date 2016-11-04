@@ -110,24 +110,29 @@ def timedelta(time):
             return str(elapsed) + ' seconds'
 
 
+regex_rts = re.compile(r'^RT @[a-zA-Z0-9_]+:\s')
+regex_replies = re.compile(r'@[a-zA-Z0-9_]+\s?')
+regex_hashtags = re.compile(r'#[a-zA-Z0-9_]+\s?')
+regex_urls = re.compile(r'https?://[\w\./]*\b')
+regex_whitespace = re.compile(r'\s+')
 def clean(text, replies=False, hashtags=False, rts=False, urls=False):
     text = text.replace('\n', ' ')
     text = text.replace('\r', ' ')
     text = unescape(text)
 
     if rts:
-        text = re.sub(r'^RT @[a-zA-Z0-9_]+:\s', '', text)
+        text = regex_rts.sub('', text)
 
     if replies:
-        text = re.sub(r'@[a-zA-Z0-9_]+\s?', '', text)
+        text = regex_replies.sub('', text)
 
     if hashtags:
-        text = re.sub(r'#[a-zA-Z0-9_]+\s?', '', text)
+        text = regex_hashtags.sub('', text)
 
     if urls:
-        text = re.sub(r'https?://[\w\./]*\b', '', text)
+        text = regex_urls.sub('', text)
 
-    text = re.sub(r'\s+', ' ', text)
+    text = regex_whitespace.sub(' ', text)
     text = text.strip()
 
     return text
