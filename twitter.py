@@ -1,5 +1,6 @@
-from tweepy import OAuthHandler
-from tweepy import API
+import json
+
+import tweepy
 
 from config import config
 import utils
@@ -12,10 +13,16 @@ class Twitter(object):
     def __init__(self,
                  consumer_key, consumer_secret,
                  access_token, access_token_secret):
-        self.auth = OAuthHandler(consumer_key, consumer_secret)
-        self.auth.set_access_token(access_token, access_token_secret)
-        self.api = API(self.auth)
-        self.me = self.api.me()
+        # all of this is encased in a try block to handle the case where this
+        # account is either locked or suspended
+        try:
+            self.auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+            self.auth.set_access_token(access_token, access_token_secret)
+            self.api = tweepy.API(self.auth)
+            self.me = self.api.me()
+        except tweepy.error.TweepError as e:
+            self.handle_exception(e)
+            raise
 
         utils.logger.info('Twitter API initialised.')
 
@@ -33,6 +40,25 @@ class Twitter(object):
             self.api.update_status(status, **kwargs)
 
         utils.logger.info('Status posted successfully!')
+
+    def extract_exception(self, e):
+        # revisit this when tweepy gets its shit together
+        reason = json.loads(e.reason.replace("'", '"'))[0]
+        return reason['code'], reason['message']
+
+    def handle_exception(self, e):
+        if not config['mail']['enabled'] or not utils.db.server_available:
+            return
+
+        api_code, message = self.extract_exception(e)
+        user = 'e_%d' % api_code
+        rate_limit = utils.rate_limit.hit('twitter_e', user, 1, 7200)
+        if rate_limit['allowed']:
+            title = 'Error %d connecting to Twitter' % api_code
+            text = ('The following error has occurred when I tried to ' +
+                    'connect to Twitter:\n\n' +
+                    '%d: %s\n\n' % (api_code, message))
+            utils.send_email(title, text)
 
 
 twitter = Twitter(config['twitter']['consumer_key'],

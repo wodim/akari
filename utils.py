@@ -5,6 +5,9 @@ import re
 import threading
 
 import redis
+import requests
+
+from config import config
 
 
 class Logger(object):
@@ -28,6 +31,8 @@ logger = Logger().get_logger()
 
 
 class DB(object):
+    server_available = False
+
     def __init__(self):
         self.server = redis.Redis(socket_connect_timeout=1)
         try:
@@ -36,7 +41,6 @@ class DB(object):
             self.server_available = True
         except Exception as e:
             logger.warning('Redis server unavailable: ' + str(e))
-            self.server_available = False
 
 db = DB()
 
@@ -66,22 +70,6 @@ class RateLimit(object):
             else:
                 db.server.incr(key)
                 return r(True, max - 1 - int(value), current_ttl)
-
-    # similar to hit(), but read-only
-    def is_allowed(self, prefix, user):
-        if not db.server_available:
-            return True
-
-        key = str(prefix) + ':' + str(user)
-        value = db.server.get(key)
-
-        if not value:
-            return True
-        else:
-            if int(value) >= max:
-                return False
-            else:
-                return True
 
 rate_limit = RateLimit()
 
@@ -171,3 +159,14 @@ def background(func):
         return thread
 
     return background_func
+
+
+def send_email(subject, text):
+    """sends an email using the mailgun http api"""
+    url = ('https://api.mailgun.net/v3/%s/messages' %
+           config['mail']['mailgun_domain'])
+    auth = ('api', config['mail']['mailgun_key'])
+    data = {'from': 'Akari Bot <%s>' % config['mail']['from'],
+            'to': [config['mail']['to']],
+            'subject': subject, 'text': text}
+    return requests.post(url, auth=auth, data=data)

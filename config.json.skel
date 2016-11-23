@@ -1,7 +1,7 @@
 {
     "akari": {
-        "animation_frames": "images/akari/frames/",
-        "still_frame": "images/akari/frames/frame-8.png",
+        "animation_frames": "assets/akari/",
+        "still_frame": "assets/akari/frame-8.png",
         "caption_type": "akari"
     },
     "twitter": {
@@ -22,12 +22,12 @@
                               "Mobile Web",
                               "Mobile Web (M2)",
                               "Mobile Web (M5)"],
-        "text_blacklist": [""],
+        "text_blacklist": [],
         "auto_translate": {"enabled": false,
                            "from": "es-ES",
                            "to": "en-US"},
-        "no_results_image": "images/akari/no-results.gif",
-        "error_image": "images/akari/out-of-service.gif"
+        "no_results_image": "assets/no-results.gif",
+        "error_image": "assets/out-of-service.gif"
     },
     "telegram": {
         "token": "",
@@ -47,5 +47,12 @@
         "api_keys": [""],
         "market": "es-ES",
         "adult": true
+    },
+    "mail": {
+        "enabled": false,
+        "from": "",
+        "to": "",
+        "mailgun_key": "",
+        "mailgun_domain": ""
     }
 }
