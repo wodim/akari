@@ -58,8 +58,8 @@ class Akari(object):
                     # this, we want to retry it
                     utils.logger.info('Wand failed to save the animation.')
 
-        raise AkariFailedToGenerateAkariException('Could not generate an ' +
-                                                  'image.')
+        msg = 'Could not generate an image.'
+        raise AkariFailedToGenerateAkariException(msg)
 
     def compose(self, image_hash):
         utils.logger.info('Starting to compose Akari...')
@@ -137,12 +137,11 @@ class Akari(object):
 
         try:
             if os.path.getsize(filename) > 3072 * 1024:
-                raise AkariAnimationTooLargeException('Composed an ' +
-                                                      'animation that is ' +
-                                                      'too big.')
+                msg = 'Composed an animation that is too big.'
+                raise AkariAnimationTooLargeException(msg)
         except FileNotFoundError:
-            raise AkariWandIsRetardedException('Wand failed to save the ' +
-                                               'animation.')
+            msg = 'Wand failed to save the animation.'
+            raise AkariWandIsRetardedException(msg)
 
         utils.logger.info(('Akari composed and saved as "{filename}"'
                            .format(filename=filename)))
@@ -201,14 +200,14 @@ def akari_cron():
         # them, in theory)
         diff = (datetime.utcnow() - status.created_at).total_seconds()
         score = utils.decay(diff, 20 * 60, 3)
-        score *= (favs + rts * 1.5) / followers
+        score *= (favs + rts * 0.5) / followers
 
-        # filter garbage. at least 70% of letters in the status must be
+        # filter garbage. at least 80% of letters in the status must be
         # /a-zA-Z/, or there's a big penalty
         clean_text = utils.clean(status.text, urls=True, replies=True,
                                  rts=True)
         meat = sum(c in string.ascii_letters for c in clean_text) or -1
-        if meat / len(clean_text) < 0.7:
+        if meat / len(clean_text) < 0.8:
             score /= 10
 
         return score

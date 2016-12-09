@@ -84,18 +84,18 @@ def timedelta(time):
         if elapsed == 1:
             return 'one hour'
         else:
-            return str(elapsed) + ' hours'
+            return '%d hours' % elapsed
     elif time > 60:
         elapsed //= 60
         if elapsed == 1:
             return 'one minute'
         else:
-            return str(elapsed) + ' minutes'
+            return '%d minutes' % elapsed
     else:
         if elapsed == 1:
             return 'one second'
         else:
-            return str(elapsed) + ' seconds'
+            return '%d seconds' % elapsed
 
 
 regex_rts = re.compile(r'^RT @[a-zA-Z0-9_]+:\s')

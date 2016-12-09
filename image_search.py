@@ -160,10 +160,10 @@ class ImageSearchResult(object):
 
     def download(self):
         try:
-            utils.logger.info(('Downloading image "{image_url}" ' +
-                               'from "{source_url}"')
-                              .format(image_url=self.image_url,
-                                      source_url=self.source_url))
+            msg = ('Downloading image "{image_url}" from "{source_url}"'
+                   .format(image_url=self.image_url,
+                           source_url=self.source_url))
+            utils.logger.info(msg)
             # fake the referrer
             response = requests.get(self.image_url,
                                     headers={'Referer': self.source_url},
@@ -185,7 +185,6 @@ class ImageSearchResult(object):
                 if not block:
                     break
                 handle.write(block)
-            handle.close()
 
         # and a metadata file to know where it came from
         metafile = utils.build_path(self.hash, 'meta')
