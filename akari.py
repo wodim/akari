@@ -157,7 +157,7 @@ class Akari(object):
         drawing.stroke_color = Color('#000')
         drawing.stroke_width = 1
         drawing.gravity = 'south'
-        drawing.text(0, 0, fill(caption, 20))
+        drawing.text(0, 0, fill(caption, 24))
         return caption, drawing
 
     def caption_seinfeld(self):
