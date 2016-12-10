@@ -192,20 +192,20 @@ def akari_cron():
         favs = status.favorite_count
         rts = status.retweet_count
         followers = status.user.followers_count
-        if followers < 1 or followers < median:
+        if followers == 0 or followers < median * 1.5:
             return -1
 
         # decay coefficient. promotes newer tweets to compensate for the
         # lower amount of favs they have received (fewer people have seen
         # them, in theory)
         diff = (datetime.utcnow() - status.created_at).total_seconds()
-        score = utils.decay(diff, 20 * 60, 3)
+        score = utils.decay(diff, 20 * 60, 1.5)
         score *= (favs + rts * 0.5) / followers
 
         # filter garbage. at least 80% of letters in the status must be
         # /a-zA-Z/, or there's a big penalty
-        clean_text = utils.clean(status.text, urls=True, replies=True,
-                                 rts=True)
+        clean_text = utils.clean(status.text,
+                                 urls=True, replies=True, rts=True)
         meat = sum(c in string.ascii_letters for c in clean_text) or -1
         if meat / len(clean_text) < 0.8:
             score /= 10
@@ -226,11 +226,10 @@ def akari_cron():
     # run out of attempts.
     for status in statuses[:10]:
         try:
-            caption = utils.clean(status.text, urls=True, replies=True,
-                                  rts=True)
+            caption = utils.clean(status.text,
+                                  urls=True, replies=True, rts=True)
             utils.logger.info('Posting "{caption}" from {tweet_id}'
-                              .format(caption=caption,
-                                      tweet_id=status.id))
+                              .format(caption=caption, tweet_id=status.id))
             akari = Akari(caption, type='animation', shuffle_results=False)
             break
         except:
