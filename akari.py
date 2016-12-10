@@ -9,6 +9,7 @@ from wand.color import Color
 from wand.drawing import Drawing
 from wand.image import Image
 
+from cache import cache
 from config import config
 from image_search import ImageSearch, ImageResultErrorException
 import utils
@@ -24,11 +25,6 @@ class AkariFailedToGenerateAkariException(Exception):
 
 class AkariWandIsRetardedException(Exception):
     pass
-
-
-# these are cached here forever.
-akari_frames = {}
-width, height = 0, 0
 
 
 class Akari(object):
@@ -76,7 +72,8 @@ class Akari(object):
             self.text = ' ' + self.text + ' '
 
         # generate the list of masks, and hold them in cache.
-        if not self.type in akari_frames:
+        akari_frames = cache.get('akari_frames:%s' % self.type)
+        if not akari_frames:  # cache miss
             if self.type == 'still':
                 masks = (config.get('akari', 'still_frame'),)
             elif self.type == 'animation':
@@ -85,9 +82,12 @@ class Akari(object):
                 # if there's only one frame here, it's not an animation
                 if len(masks) == 1:
                     self.type = 'still'
-            akari_frames[self.type] = [Image(filename=x) for x in masks]
-            width = akari_frames[self.type][0].width
-            height = akari_frames[self.type][0].height
+            akari_frames = [Image(filename=x) for x in masks]
+            width, height = akari_frames[0].width, akari_frames[0].height
+
+            cache.set('akari_frames:%s' % self.type, akari_frames)
+            cache.set('akari_width', width)
+            cache.set('akari_height', height)
 
         # now, get the background image
         filename = utils.build_path(image_hash, 'original')
@@ -110,7 +110,7 @@ class Akari(object):
             caption, drawing = self.caption_akari()
 
         result = Image()
-        for akari_frame in akari_frames[self.type]:
+        for akari_frame in akari_frames:
             # take the background image
             this_frame = Image(bg_img)
 
@@ -120,7 +120,7 @@ class Akari(object):
             # draw the caption on this frame
             drawing(this_frame)
 
-            if len(akari_frames[self.type]) == 1:
+            if len(akari_frames) == 1:
                 # we are done already
                 result = Image(this_frame)
             else:

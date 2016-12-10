@@ -2,10 +2,10 @@ from configparser import ConfigParser
 import re
 import sys
 
+from cache import cache
+
 
 class Config(object):
-    cache = {}
-
     def __init__(self, filename):
         self.config = ConfigParser()
         self.config.read(filename)
@@ -38,15 +38,15 @@ class Config(object):
         return value
 
     def _cache_get(self, section, key):
-        return self.cache['%s:%s' % (section, key)]
+        return cache.get('%s:%s' % (section, key))
 
     def _cache_set(self, section, key, value):
-        self.cache['%s:%s' % (section, key)] = value
+        return cache.set('%s:%s' % (section, key), value)
 
     def get(self, section, key, type=str):
-        try:
-            r = self._cache_get(section, key)
-        except KeyError:
+        r = self._cache_get(section, key)
+
+        if not r:  # cache miss
             if type == int:
                 r = self._to_int(self._get(section, key))
             elif type == list:
@@ -62,6 +62,7 @@ class Config(object):
             self._cache_set(section, key, r)
 
         return r
+
 
 try:
     filename = sys.argv[1]
