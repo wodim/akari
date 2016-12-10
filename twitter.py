@@ -47,7 +47,8 @@ class Twitter(object):
         return reason['code'], reason['message']
 
     def handle_exception(self, e):
-        if not config['mail']['enabled'] or not utils.db.server_available:
+        mail_enabled = config.get('mail', 'enabled', bool)
+        if not mail_enabled or not utils.db.server_available:
             return
 
         api_code, message = self.extract_exception(e)
@@ -61,7 +62,7 @@ class Twitter(object):
             utils.send_email(title, text)
 
 
-twitter = Twitter(config['twitter']['consumer_key'],
-                  config['twitter']['consumer_secret'],
-                  config['twitter']['access_token'],
-                  config['twitter']['access_token_secret'])
+twitter = Twitter(config.get('twitter', 'consumer_key'),
+                  config.get('twitter', 'consumer_secret'),
+                  config.get('twitter', 'access_token'),
+                  config.get('twitter', 'access_token_secret'))

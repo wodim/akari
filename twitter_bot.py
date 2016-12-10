@@ -6,7 +6,6 @@ from akari import Akari
 from config import config
 from followers import is_eligible
 from image_search import ImageSearchNoResultsException
-from translator import Translator, TranslatorException
 from twitter import twitter
 import utils
 
@@ -26,18 +25,16 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # if the sources whitelist is enabled, ignore those who aren't on it
-        if len(config['twitter']['sources_whitelist']) > 0:
-            if status.source not in config['twitter']['sources_whitelist']:
+        sources_whitelist = config.get('twitter', 'sources_whitelist', list)
+        if status.source not in sources_whitelist:
                 return
 
         # if the blacklist is enabled, ignore tweets that match it
-        if len(config['twitter']['text_blacklist']) > 0:
-            if any(x.search(status.text)
-                   for x in config['twitter']['text_blacklist']):
-                return
+        text_blacklist = config.get('twitter', 'text_blacklist', 're_list')
+        if any(x.search(status.text) for x in text_blacklist):
+            return
 
-        text = utils.clean(status.text, urls=True, replies=True,
-                           rts=True)
+        text = utils.clean(status.text, urls=True, replies=True, rts=True)
         if text == '':
             return
 
@@ -79,17 +76,6 @@ class TwitterBot(tweepy.streaming.StreamListener):
                 pass
 
         try:
-            if config['twitter']['auto_translate']['enabled']:
-                lang_from = config['twitter']['auto_translate']['from']
-                lang_to = config['twitter']['auto_translate']['to']
-                try:
-                    translator = Translator(text,
-                                            lang_from=lang_from,
-                                            lang_to=lang_to)
-                    text = translator.translation
-                except TranslatorException as e:
-                    utils.logger.exception('Error translating.')
-
             akari = Akari(text, type='animation', shuffle_results=True)
             text = akari.caption
             image = akari.filename
@@ -100,7 +86,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
                     "I don't understand...",
                     "I don't know what you mean by that.")
             text = random.choice(msgs)
-            image = config['twitter']['no_results_image']
+            image = config.get('twitter', 'no_results_image')
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -110,7 +96,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
                     "I don't feel so well right now.",
                     'Sorry, I fell asleep.')
             text = random.choice(msgs) + ' Try again a bit later.'
-            image = config['twitter']['error_image']
+            image = config.get('twitter', 'error_image')
 
         # start building a reply. prepend @nick of whoever we are replying to
         reply = '@' + status.author.screen_name

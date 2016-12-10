@@ -1,6 +1,5 @@
 import json
 import os
-import random
 import re
 import socket
 import uuid
@@ -32,7 +31,7 @@ class GoogleImageSearch(object):
         try:
             s = requests.session()
             s.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
-            headers = {'User-Agent': config['google']['user_agent']}
+            headers = {'User-Agent': config.get('image_search', 'user_agent')}
             response = s.get(url, params=params, headers=headers,
                              timeout=3)
         except (requests.exceptions.RequestException, socket.timeout) as e:
@@ -59,87 +58,21 @@ class GoogleImageSearch(object):
         self.results = results
 
 
-class BingImageSearch(object):
-    def __init__(self, text):
-        utils.logger.info('Starting Bing image search: "{}"'.format(text))
-
-        # escape '
-        text = text.replace("'", "''")
-        url = 'https://api.datamarket.azure.com/Bing/Search/v1/Composite'
-        # if adult results are enabled, safesearch is off, else strict
-        adult = "'Off'" if config['bing']['adult'] else "'Strict'"
-        params = {'Sources': "'image'",
-                  'Query': "'{}'".format(text),
-                  'Adult': adult,
-                  'Market': "'{}'".format(config['bing']['market']),
-                  '$format': 'json'}
-
-        try:
-            # choose a random api key. keys that start with * are disabled.
-            api_key = random.choice([x for x in config['bing']['api_keys']
-                                     if not x.startswith('*')])
-            s = requests.session()
-            s.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
-            response = s.get(url, auth=('', api_key), params=params,
-                             timeout=3)
-        except (requests.exceptions.RequestException, socket.timeout) as e:
-            raise ImageSearchException('Error making an HTTP request')
-
-        if response.status_code != requests.codes.ok:
-            msg = 'Response code not ok ({})'.format(response.status_code)
-            utils.logger.warning(msg)
-            raise ImageSearchException(msg)
-
-        try:
-            decoded_json = json.loads(response.text)
-        except Exception as e:
-            msg = 'Could not decode response'
-            utils.logger.exception(msg)
-            raise ImageSearchException(msg)
-
-        try:
-            results_json = decoded_json['d']['results'][0]['Image']
-        except KeyError:
-            msg = 'API response could not be parsed'
-            utils.logger.warning(msg)
-            raise ImageSearchException(msg)
-
-        results = []
-        for result_json in results_json:
-            results.append((result_json['MediaUrl'], result_json['SourceUrl']))
-
-        self.results = results
-
-
 class ImageSearch(object):
-    def __init__(self, text, provider=None):
+    def __init__(self, text):
         self.results = []
 
-        if provider not in ('google', 'bing'):
-            if config['image_search']['provider'] in ('google', 'bing'):
-                provider = config['image_search']['provider']
-            else:
-                provider = 'google'
-
-        if provider == 'google':
-            try:
-                results = GoogleImageSearch(text).results
-            except ImageSearchException as e:
-                msg = 'Failed to search using Google, will fall back to Bing'
-                utils.logger.exception(msg)
-                results = BingImageSearch(text).results
-        elif provider == 'bing':
-            results = BingImageSearch(text).results
+        results = GoogleImageSearch(text).results
 
         if len(results) == 0:
             utils.logger.warning('No results')
-            raise ImageSearchNoResultsException('No results found for "{}".'
-                                                .format(text))
+            msg = 'No results found for "%s"' % text
+            raise ImageSearchNoResultsException(msg)
 
         for image_url, source_url in results:
             # check if the source is banned and, in that case, ignore it
-            if any(x in source_url
-                    for x in config['image_search']['banned_sources']):
+            if any(x in source_url for x in
+                   config.get('image_search', 'banned_sources', list)):
                 continue
 
             self.results.append(ImageSearchResult(image_url, source_url, text))

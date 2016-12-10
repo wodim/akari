@@ -4,3 +4,4 @@ __pycache__
 images
 test*
 pending.txt
+*.ini

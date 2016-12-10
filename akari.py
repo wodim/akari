@@ -70,9 +70,9 @@ class Akari(object):
 
         # generate the list of masks, and hold them in memory.
         if self.type == 'still':
-            masks = (config['akari']['still_frame'],)
+            masks = (config.get('akari', 'still_frame'),)
         elif self.type == 'animation':
-            path = config['akari']['animation_frames']
+            path = config.get('akari', 'animation_frames')
             masks = sorted([path + x for x in os.listdir(path)])
             # if there's only one frame here, it's not an animation
             if len(masks) == 1:
@@ -95,7 +95,7 @@ class Akari(object):
         bg_img.crop(width=width, height=height, gravity='center')
 
         # generate the drawing to be applied to each frame
-        if config['akari']['caption_type'] == 'seinfeld':
+        if config.get('akari', 'caption_type') == 'seinfeld':
             caption, drawing = self.caption_seinfeld()
         else:
             caption, drawing = self.caption_akari()

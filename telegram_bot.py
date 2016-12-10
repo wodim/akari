@@ -14,12 +14,12 @@ class TelegramBotException(Exception):
 
 
 class TelegramBot(telepot.aio.Bot):
-    HELP_MESSAGE = ("Hey! I'm Akari Shoah.\n" +
-                    'If you want an image, just tell me what do you want me ' +
-                    'to search for.\n' +
-                    'You can also ask me to create GIFs for you on Twitter: ' +
+    HELP_MESSAGE = ("Hey! I'm Akari Shoah.\n"
+                    'If you want an image, just tell me what do you want me '
+                    'to search for.\n'
+                    'You can also ask me to create GIFs for you on Twitter: '
                     'https://twitter.com/akari_shoah')
-    INVALID_CMD = ("I don't know what you mean by that. If you need help, " +
+    INVALID_CMD = ("I don't know what you mean by that. If you need help, "
                    'use /help.')
 
     def __init__(self, *args, **kwargs):
@@ -53,7 +53,9 @@ class TelegramBot(telepot.aio.Bot):
                 return
 
             # check rate limit
-            if chat_id not in config['telegram']['rate_limit_exempt_chat_ids']:
+            exemptions = config.get('telegram', 'rate_limit_exemptions',
+                                    'int_list')
+            if chat_id not in exemptions:
                 rate_limit = utils.rate_limit.hit('telegram', chat_id)
                 if not rate_limit['allowed']:
                     msg = (('Message from {longname}: throttled ' +
@@ -111,7 +113,7 @@ class TelegramBot(telepot.aio.Bot):
 
 
 if __name__ == '__main__':
-    bot = TelegramBot(config['telegram']['token'])
+    bot = TelegramBot(config.get('telegram', 'token'))
 
     loop = asyncio.get_event_loop()
     loop.create_task(bot.message_loop())

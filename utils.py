@@ -164,9 +164,9 @@ def background(func):
 def send_email(subject, text):
     """sends an email using the mailgun http api"""
     url = ('https://api.mailgun.net/v3/%s/messages' %
-           config['mail']['mailgun_domain'])
-    auth = ('api', config['mail']['mailgun_key'])
-    data = {'from': 'Akari Bot <%s>' % config['mail']['from'],
-            'to': [config['mail']['to']],
+           config.get('mail', 'mailgun_domain'))
+    auth = ('api', config.get('mail', 'mailgun_key'))
+    data = {'from': 'Akari Bot <%s>' % config.get('mail', 'from'),
+            'to': [config.get('mail', 'to')],
             'subject': subject, 'text': text}
     return requests.post(url, auth=auth, data=data)
