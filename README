@@ -1,0 +1,78 @@
+Akari Endlösung is basically a Twitter and Telegram bot that searches for
+images using the Bing API and generates a captioned picture which is then
+posted.
+
+On Twitter, people can ask for captioned images that are generated on the fly.
+The bot also generates new images every twenty minutes based on the most
+popular tweet that it has seen in that timespan using a rather simple algorithm
+which still deserves some improvements.
+
+On Telegram, the bot can also be asked to generate images, but it does not
+send images automatically or anything like that.
+
+This codebase also features a few other goodies such as:
+* Basic rate limiting, using Redis
+* Translation API, not used at the moment
+* Follows and unfollows people automatically, ignoring obvious spammers
+* Can send mails using Mailgun (currently used for stuff that needs to be fixed
+  manually, i.e. when the Twitter account is suspended)
+
+At this point the bot is pretty resilient to abuse and is proven to be very
+stable.
+
+The objective of the bot was to create a new version of @i_akari_daisuki, this
+time in Spanish. I didn't want the bot to do anything else, but the ability to
+request new captions by its followers turned out to be pretty popular, so it
+was left on. This is probably the most distinctive feature of the bot, and it
+receives dozens of requests daily, which in turn are usually retweeted,
+making the bot gain even more followers.
+
+Installation
+------------
+
+First: this bot works with Python 3 only. And the Telegram bot uses asyncio,
+so it needs Python 3.5.
+
+There's a requirements.txt file, so to install the required modules from PyPI,
+you just need to:
+
+$ pip install -r requirements.txt
+
+In turn, you'll need imagemagick, and also a Redis server. The Redis server is
+used for rate limiting of requests and of "out of service" mails sent.
+
+Rate limits are important for the Telegram bot: on Twitter it's
+hard to spam the bot because Twitter itself will throttle you, but there's no
+limit in the amount of messages you can send to the bot on Telegram, so if you
+don't want to have Redis, you might as well not use the Telegram bot.
+Rate limits are also applied on Twitter, but they are much "softer".
+
+The Twitter bot also mails you in case it's failing to connect to Twitter,
+which happens when the account gets locked. Mails are rate limited, so Redis
+is necessary for this too.
+
+You'll need to copy config.ini.skel to config.ini and populate it, the
+settings are explained inside the file as comments.
+
+About the crontab:
+
+*/20 * * * * from akari import akari_cron; akari_cron()
+Every twenty minutes, generate a new caption based on the last tweets.
+Those tweets are stored in pending.txt. The file is emptied once a new caption
+has been successfully published.
+
+*/15 * * * * from followers import follow_my_followers; follow_my_followers()
+Every fifteen minutes, check for new followers, and then follow them back.
+
+0 6 * * * from followers import unfollow_my_unfollowers; unfollow_my_unfollowers()"
+Every night at 6:00, check for users I follow but who no longer follow me back
+and unfollow them.
+
+0 6 * * * find akari_endlosung/images -type f -delete
+Every night at 6:00, empty the images folder. Images are *not* automatically
+removed after being posted.
+
+Also, you'll need a process control system that automatically launches both
+bots, deals with the logs, and re-launches the bots should they crash.
+I use supervisord, for which I provide a supervisor.ini file you can drop in
+/etc/supervisor/conf.d/, but if you want you can also use upstart or systemd.
