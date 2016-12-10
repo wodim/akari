@@ -26,6 +26,11 @@ class AkariWandIsRetardedException(Exception):
     pass
 
 
+# these are cached here forever.
+akari_frames = {}
+width, height = 0, 0
+
+
 class Akari(object):
     def __init__(self, text, type='still', shuffle_results=False, **kwargs):
         self.text = text
@@ -62,23 +67,27 @@ class Akari(object):
         raise AkariFailedToGenerateAkariException(msg)
 
     def compose(self, image_hash):
+        global akari_frames, width, height
+
         utils.logger.info('Starting to compose Akari...')
 
         # make hashtags searchable
         if '#' in self.text:
             self.text = ' ' + self.text + ' '
 
-        # generate the list of masks, and hold them in memory.
-        if self.type == 'still':
-            masks = (config.get('akari', 'still_frame'),)
-        elif self.type == 'animation':
-            path = config.get('akari', 'animation_frames')
-            masks = sorted([path + x for x in os.listdir(path)])
-            # if there's only one frame here, it's not an animation
-            if len(masks) == 1:
-                self.type = 'still'
-        akari_frames = [Image(filename=x) for x in masks]
-        width, height = akari_frames[0].width, akari_frames[0].height
+        # generate the list of masks, and hold them in cache.
+        if not self.type in akari_frames:
+            if self.type == 'still':
+                masks = (config.get('akari', 'still_frame'),)
+            elif self.type == 'animation':
+                path = config.get('akari', 'animation_frames')
+                masks = sorted([path + x for x in os.listdir(path)])
+                # if there's only one frame here, it's not an animation
+                if len(masks) == 1:
+                    self.type = 'still'
+            akari_frames[self.type] = [Image(filename=x) for x in masks]
+            width = akari_frames[self.type][0].width
+            height = akari_frames[self.type][0].height
 
         # now, get the background image
         filename = utils.build_path(image_hash, 'original')
@@ -101,7 +110,7 @@ class Akari(object):
             caption, drawing = self.caption_akari()
 
         result = Image()
-        for akari_frame in akari_frames:
+        for akari_frame in akari_frames[self.type]:
             # take the background image
             this_frame = Image(bg_img)
 
@@ -111,7 +120,7 @@ class Akari(object):
             # draw the caption on this frame
             drawing(this_frame)
 
-            if len(masks) == 1:
+            if len(akari_frames[self.type]) == 1:
                 # we are done already
                 result = Image(this_frame)
             else:
@@ -119,8 +128,6 @@ class Akari(object):
                 result.sequence.append(this_frame)
                 with result.sequence[-1]:
                     result.sequence[-1].delay = 10
-            # close the mask file
-            akari_frame.close()
             # remove this frame from memory (it's in the sequence already)
             this_frame.close()
 
