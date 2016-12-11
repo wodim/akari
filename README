@@ -1,6 +1,6 @@
 Akari Endlösung is basically a Twitter and Telegram bot that searches for
-images using the Bing API and generates a captioned picture which is then
-posted.
+images scrapping and parsing Google and generates a captioned picture which is
+then posted.
 
 On Twitter, people can ask for captioned images that are generated on the fly.
 The bot also generates new images every twenty minutes based on the most
@@ -30,7 +30,7 @@ making the bot gain even more followers.
 Installation
 ------------
 
-First: this bot works with Python 3 only. And the Telegram bot uses asyncio,
+First: this bot works with Python 3 only. And the Telegram bot uses async,
 so it needs Python 3.5.
 
 There's a requirements.txt file, so to install the required modules from PyPI,

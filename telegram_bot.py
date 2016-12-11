@@ -62,7 +62,7 @@ class TelegramBot(telepot.aio.Bot):
                             '(resets in {reset} seconds)')
                            .format(longname=longname,
                                    reset=rate_limit['reset']))
-                    utils.logger.warn(msg)
+                    utils.logger.warning(msg)
                     msg = ('Not so fast! Try again in {}.'
                            .format(utils.timedelta(rate_limit['reset'])))
                     await self.send_message(message, msg)

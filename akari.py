@@ -63,17 +63,17 @@ class Akari(object):
         raise AkariFailedToGenerateAkariException(msg)
 
     def compose(self, image_hash):
-        global akari_frames, width, height
-
         utils.logger.info('Starting to compose Akari...')
 
         # make hashtags searchable
         if '#' in self.text:
             self.text = ' ' + self.text + ' '
 
-        # generate the list of masks, and hold them in cache.
+        # try to get all masks from cache
         akari_frames = cache.get('akari_frames:%s' % self.type)
+
         if not akari_frames:  # cache miss
+            # generate the list of masks
             if self.type == 'still':
                 masks = (config.get('akari', 'still_frame'),)
             elif self.type == 'animation':
@@ -83,11 +83,11 @@ class Akari(object):
                 if len(masks) == 1:
                     self.type = 'still'
             akari_frames = [Image(filename=x) for x in masks]
-            width, height = akari_frames[0].width, akari_frames[0].height
 
+            # cache all of this
             cache.set('akari_frames:%s' % self.type, akari_frames)
-            cache.set('akari_width', width)
-            cache.set('akari_height', height)
+
+        width, height = akari_frames[0].width, akari_frames[0].height
 
         # now, get the background image
         filename = utils.build_path(image_hash, 'original')
@@ -109,7 +109,7 @@ class Akari(object):
         else:
             caption, drawing = self.caption_akari()
 
-        result = Image()
+        result = Image()  # this will be the resulting image
         for akari_frame in akari_frames:
             # take the background image
             this_frame = Image(bg_img)
@@ -143,10 +143,14 @@ class Akari(object):
         bg_img.close()
 
         try:
+            # if the gif is too big, it has to be discarded. a new one
+            # will be generated using a different image this time.
             if os.path.getsize(filename) > 3072 * 1024:
                 msg = 'Composed an animation that is too big.'
                 raise AkariAnimationTooLargeException(msg)
         except FileNotFoundError:
+            # sometimes Wand fails to save the animation, and does not even
+            # raise an exception. retry in this case.
             msg = 'Wand failed to save the animation.'
             raise AkariWandIsRetardedException(msg)
 
