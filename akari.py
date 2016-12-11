@@ -48,7 +48,7 @@ class Akari(object):
             # then, compose it. 3 tries, in case Wand acts funny.
             for i in range(3):
                 try:
-                    self.compose(result.hash)
+                    self.compose(result)
                     return
                 except AkariAnimationTooLargeException:
                     utils.logger.info('Composed an animation that is too big.')
@@ -62,7 +62,7 @@ class Akari(object):
         msg = 'Could not generate an image.'
         raise AkariFailedToGenerateAkariException(msg)
 
-    def compose(self, image_hash):
+    def compose(self, image):
         utils.logger.info('Starting to compose Akari...')
 
         # make hashtags searchable
@@ -90,7 +90,7 @@ class Akari(object):
         width, height = akari_frames[0].width, akari_frames[0].height
 
         # now, get the background image
-        filename = utils.build_path(image_hash, 'original')
+        filename = image.get_path('original')
         with Image(filename=filename) as original:
             # if it's an animation, take only the first frame
             if original.animation:
@@ -132,7 +132,7 @@ class Akari(object):
             this_frame.close()
 
         # save the result
-        filename = utils.build_path(image_hash, self.type)
+        filename = image.get_path(self.type)
         result.save(filename=filename)
 
         # destroy everything

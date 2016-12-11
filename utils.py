@@ -133,17 +133,6 @@ def ellipsis(text, max_length):
         return text
 
 
-def build_path(hash_, kind):
-    if kind == 'meta':
-        ext = 'txt'
-    elif kind == 'animation':
-        ext = 'gif'
-    else:
-        ext = 'jpg'
-
-    return 'images/image_{}_{}.{}'.format(hash_, kind, ext)
-
-
 def decay(time, max_time, coeff):
     threshold = max_time - time
     if threshold < 0:

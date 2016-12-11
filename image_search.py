@@ -110,7 +110,7 @@ class ImageSearchResult(object):
             raise ImageResultErrorException('Download of image failed')
 
         # store the image
-        filename = utils.build_path(self.hash, 'original')
+        filename = self.get_path('original')
         utils.logger.info('Saving image to "{filename}"'
                           .format(filename=filename))
         with open(filename, 'wb') as handle:
@@ -120,7 +120,7 @@ class ImageSearchResult(object):
                 handle.write(block)
 
         # and a metadata file to know where it came from
-        metafile = utils.build_path(self.hash, 'meta')
+        metafile = self.get_path('meta')
         with open(metafile, 'w') as handle:
             handle.write('url:\t' + self.image_url + '\n')
             handle.write('source:\t' + self.source_url + '\n')
@@ -137,3 +137,13 @@ class ImageSearchResult(object):
             raise ImageResultErrorException('Image too big')
 
         utils.logger.info('Complete')
+
+    def get_path(self, kind):
+        if kind == 'meta':
+            ext = 'txt'
+        elif kind == 'animation':
+            ext = 'gif'
+        else:
+            ext = 'jpg'
+
+        return 'images/image_{}_{}.{}'.format(self.hash, kind, ext)
