@@ -56,7 +56,7 @@ class TelegramBot(telepot.aio.Bot):
             exemptions = config.get('telegram', 'rate_limit_exemptions',
                                     'int_list')
             if chat_id not in exemptions:
-                rate_limit = utils.rate_limit.hit('telegram', chat_id)
+                rate_limit = utils.ratelimit_hit('telegram', chat_id)
                 if not rate_limit['allowed']:
                     msg = (('Message from {longname}: throttled ' +
                             '(resets in {reset} seconds)')

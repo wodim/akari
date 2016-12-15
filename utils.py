@@ -3,11 +3,11 @@ from html import unescape
 import logging
 import re
 import threading
+import time
 
-import redis
 import requests
 
-from config import config
+from config import config, Config
 
 
 class Logger(object):
@@ -30,48 +30,41 @@ class Logger(object):
 logger = Logger().get_logger()
 
 
-class DB(object):
-    server_available = False
+# allowed: whether the action was accepted
+# left: how many requests are left until next reset
+# reset: how many seconds until the rate limit is reset
+def ratelimit_hit(prefix, user, max=50, ttl=60 * 10):
+    def r(x, y, z, unavailable=True):
+        return dict(allowed=x, left=y, reset=z, unavailable=unavailable)
 
-    def __init__(self):
-        self.server = redis.Redis(socket_connect_timeout=1)
-        try:
-            self.server.ping()
-            logger.warning('Redis initialised.')
-            self.server_available = True
-        except Exception as e:
-            logger.warning('Redis server unavailable: ' + str(e))
+    key = str(prefix) + ':' + str(user)
+    current_ts = int(time.time())
 
-db = DB()
-
-
-class RateLimit(object):
-    # allowed: whether the action was accepted
-    # left: how many requests are left until next reset
-    # reset: how many seconds until the rate limit is reset
-    def hit(self, prefix, user, max=50, ttl=60 * 10):
-        def r(x, y, z): return {'allowed': x, 'left': y, 'reset': z}
-        # if the server is not available, let it through
-        if not db.server_available:
-            return r(True, 1, 0)
-
-        key = str(prefix) + ':' + str(user)
-        value = db.server.get(key)
-
-        if not value:
-            # if key does not exist...
-            db.server.set(key, 1)
-            db.server.expire(key, ttl)
-            return r(True, max - 1, ttl)
-        else:
-            current_ttl = db.server.ttl(key)
-            if int(value) >= max:
-                return r(False, 0, current_ttl)
-            else:
-                db.server.incr(key)
-                return r(True, max - 1 - int(value), current_ttl)
-
-rate_limit = RateLimit()
+    try:
+        with Config('rate_limits.ini', cached_reads=False) as rl:
+            try:
+                count = rl.get(key, 'count', int)
+                ts = rl.get(key, 'ts', int)
+                if ts + ttl > current_ts:  # this rl is still in effect
+                    left = ts + ttl - current_ts
+                    if count >= max:  # don't allow this request
+                        return r(False, 0, left)
+                    else:  # allow this request and sum it
+                        rl.set(key, 'count', count + 1)
+                        return r(True, max - count + 1, left)
+                else:  # this rl has expired already, renew it
+                    rl.set(key, 'count', 1)
+                    rl.set(key, 'ts', current_ts)
+                    return r(True, max - 1, ttl)
+            except KeyError:
+                # new rl
+                rl.set(key, 'count', 1)
+                rl.set(key, 'ts', current_ts)
+                return r(True, max - 1, ttl)
+    except OSError:
+        # file is locked or something, so just allow it
+        logger.exception("Couldn't open ratelimit file!")
+        return r(True, 1, 0, unavailable=True)
 
 
 def timedelta(time):

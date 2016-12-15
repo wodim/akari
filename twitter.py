@@ -47,14 +47,13 @@ class Twitter(object):
         return reason['code'], reason['message']
 
     def handle_exception(self, e):
-        mail_enabled = config.get('mail', 'enabled', bool)
-        if not mail_enabled or not utils.db.server_available:
+        if not config.get('mail', 'enabled', bool):
             return
 
         api_code, message = self.extract_exception(e)
         user = 'e_%d' % api_code
-        rate_limit = utils.rate_limit.hit('twitter_e', user, 1, 7200)
-        if rate_limit['allowed']:
+        rate_limit = utils.ratelimit_hit('twitter_e', user, 1, 7200)
+        if not rate_limit['unavailable'] and rate_limit['allowed']:
             title = 'Error %d connecting to Twitter' % api_code
             text = ('The following error has occurred when I tried to ' +
                     'connect to Twitter:\n\n' +
