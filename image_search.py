@@ -72,7 +72,7 @@ class ImageSearch(object):
         for image_url, source_url in results:
             # check if the source is banned and, in that case, ignore it
             if any(x in source_url for x in
-                   config.get('image_search', 'banned_sources', list)):
+                   config.get('image_search', 'banned_sources', type=list)):
                 continue
 
             self.results.append(ImageSearchResult(image_url, source_url, text))

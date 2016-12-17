@@ -54,7 +54,7 @@ class TelegramBot(telepot.aio.Bot):
 
             # check rate limit
             exemptions = config.get('telegram', 'rate_limit_exemptions',
-                                    'int_list')
+                                    type='int_list')
             if chat_id not in exemptions:
                 rate_limit = utils.ratelimit_hit('telegram', chat_id)
                 if not rate_limit['allowed']:

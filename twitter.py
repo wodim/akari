@@ -47,7 +47,7 @@ class Twitter(object):
         return reason['code'], reason['message']
 
     def handle_exception(self, e):
-        if not config.get('mail', 'enabled', bool):
+        if not config.get('mail', 'enabled', type=bool):
             return
 
         api_code, message = self.extract_exception(e)
