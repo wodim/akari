@@ -194,9 +194,21 @@ def akari_cron():
     # get a random line. will error out if there are none, which is okay.
     with open('pending.txt') as file:
         for line in file.read().splitlines():
-            id, text = line.split(' ', 1)
-            if len(text) < 50:
-                ids.append(id)
+            id_, text = line.split(' ', 1)
+
+            # if the blacklist is enabled, ignore tweets that match it
+            text_blacklist = config.get('twitter', 'text_blacklist',
+                                        type='re_list')
+            if any(x.search(text) for x in text_blacklist):
+                continue
+
+            # (tweet length - hardcoded jp crap) / 2 -> (140 - 10) / 2
+            # anything over that would not fit in a tweet, so ignore it
+            if len(text) > 65:
+                continue
+
+            # alright, this tweet is a candidate
+            ids.append(id_)
 
     # this function generates a score for each tweet
     def score(status):
