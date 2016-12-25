@@ -2,6 +2,7 @@ import json
 import os
 import re
 import socket
+import urllib
 import uuid
 
 from bs4 import BeautifulSoup
@@ -53,7 +54,8 @@ class GoogleImageSearch(object):
 
         results = []
         for result_json in results_json:
-            results.append((result_json['ou'], result_json['ru']))
+            image_url = urllib.parse.unquote(result_json['ou'])
+            results.append((image_url, result_json['ru']))
 
         self.results = results
 
