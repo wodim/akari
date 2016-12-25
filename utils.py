@@ -33,8 +33,8 @@ logger = Logger().get_logger()
 # allowed: whether the action was accepted
 # left: how many requests are left until next reset
 # reset: how many seconds until the rate limit is reset
-def ratelimit_hit(prefix, user, max=50, ttl=60 * 10):
-    def r(x, y, z, unavailable=True):
+def ratelimit_hit(prefix, user, max_=50, ttl=60 * 10):
+    def r(x, y, z, unavailable=False):
         return dict(allowed=x, left=y, reset=z, unavailable=unavailable)
 
     key = str(prefix) + ':' + str(user)
@@ -47,20 +47,20 @@ def ratelimit_hit(prefix, user, max=50, ttl=60 * 10):
                 ts = rl.get(key, 'ts', int)
                 if ts + ttl > current_ts:  # this rl is still in effect
                     left = ts + ttl - current_ts
-                    if count >= max:  # don't allow this request
+                    if count >= max_:  # don't allow this request
                         return r(False, 0, left)
                     else:  # allow this request and sum it
                         rl.set(key, 'count', count + 1)
-                        return r(True, max - count + 1, left)
+                        return r(True, max_ - count + 1, left)
                 else:  # this rl has expired already, renew it
                     rl.set(key, 'count', 1)
                     rl.set(key, 'ts', current_ts)
-                    return r(True, max - 1, ttl)
+                    return r(True, max_ - 1, ttl)
             except KeyError:
                 # new rl
                 rl.set(key, 'count', 1)
                 rl.set(key, 'ts', current_ts)
-                return r(True, max - 1, ttl)
+                return r(True, max_ - 1, ttl)
     except OSError:
         # file is locked or something, so just allow it
         logger.exception("Couldn't open ratelimit file!")
