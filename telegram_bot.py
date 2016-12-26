@@ -28,18 +28,16 @@ class TelegramBot(telepot.aio.Bot):
 
     async def on_chat_message(self, message):
         try:
-            content_type, chat_type, chat_id = telepot.glance(message)
+            content_type, _, chat_id = telepot.glance(message)
 
             if content_type != 'text':
                 await self.send_message(message, self.INVALID_CMD)
                 return
 
             name = self.format_name(message)
-            longname = '{chat_id} ({name})'.format(chat_id=chat_id,
-                                                   name=name)
-            utils.logger.info('Message from {longname}: "{message_text}"'
-                              .format(longname=longname,
-                                      message_text=message['text']))
+            longname = '{chat_id} ({name})'.format(chat_id=chat_id, name=name)
+            utils.logger.info('Message from %s: "%s"',
+                              longname, message['text'])
 
             if message['text'].startswith('/'):
                 command = message['text'].split(' ')[0][1:]
@@ -58,13 +56,10 @@ class TelegramBot(telepot.aio.Bot):
             if chat_id not in exemptions:
                 rate_limit = utils.ratelimit_hit('telegram', chat_id)
                 if not rate_limit['allowed']:
-                    msg = (('Message from {longname}: throttled ' +
-                            '(resets in {reset} seconds)')
-                           .format(longname=longname,
-                                   reset=rate_limit['reset']))
-                    utils.logger.warning(msg)
-                    msg = ('Not so fast! Try again in {}.'
-                           .format(utils.timedelta(rate_limit['reset'])))
+                    msg = 'Message from %s: throttled (resets in %d seconds)'
+                    utils.logger.warning(msg, longname, rate_limit['reset'])
+                    msg = ('Not so fast! Try again in %d.' %
+                           utils.timedelta(rate_limit['reset']))
                     await self.send_message(message, msg)
                     return
 
@@ -75,17 +70,16 @@ class TelegramBot(telepot.aio.Bot):
                 akari = Akari(message['text'], type='still',
                               shuffle_results=True)
             except ImageSearchNoResultsException:
-                utils.logger.exception('Error searching for ' + longname)
+                utils.logger.exception('Error searching for %s', longname)
                 await self.send_message(message, 'No results.')
                 return
 
             # then, if successful, send the pic
             await self.send_message(message, akari.caption,
                                     filename=akari.filename)
-        except Exception as e:
-            utils.logger.exception('Error handling {longname} ({type})'
-                                   .format(longname=longname,
-                                           type=message['chat']['type']))
+        except Exception:
+            utils.logger.exception('Error handling %s (%s)',
+                                   longname, message['chat']['type'])
             await self.send_message(message, 'Sorry, try again.')
 
     async def send_message(self, message, caption, filename=None,

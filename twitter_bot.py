@@ -44,22 +44,21 @@ class TwitterBot(tweepy.streaming.StreamListener):
         if not status.text.startswith('@' + twitter.me.screen_name):
             # store this status
             with open('pending.txt', 'a') as p_file:
-                p_file.write(str(status.id) + ' ' + text + '\n')
+                print('%d %s' % (status.id, text), file=p_file)
             return
 
         # ignore people with less than X followers
         rate_limit_slow = utils.ratelimit_hit('twitter', 'global_slow', 5, 60)
         if (status.author.followers_count < 25 and
                 not rate_limit_slow['allowed']):
-            utils.logger.info(('{id} - Ignoring because of low follower count'
-                               .format(id=int(status.id))))
+            utils.logger.info('%d - Ignoring because of low follower count',
+                              status.id)
             return
 
         # check ratelimit
         rate_limit = utils.ratelimit_hit('twitter', 'global', 3, 5)
         if not rate_limit['allowed']:
-            utils.logger.info(('{id} - Ignoring because of ratelimit'
-                               .format(id=int(status.id))))
+            utils.logger.info('%d - Ignoring because of ratelimit', status.id)
             return
 
         # so we'll generate something for this guy...
@@ -74,7 +73,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
         if is_eligible(status.author):
             try:
                 twitter.api.create_friendship(status.author.screen_name)
-            except tweepy.error.TweepError as e:
+            except tweepy.error.TweepError:
                 pass
 
         try:
@@ -91,7 +90,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
             image = config.get('twitter', 'no_results_image')
         except KeyboardInterrupt:
             raise
-        except Exception as e:
+        except Exception:
             utils.logger.exception('Error composing the image')
             msgs = ("Can't hear ya...",
                     "Ooops, I'm a bit busy at the moment.",
@@ -111,19 +110,17 @@ class TwitterBot(tweepy.streaming.StreamListener):
                          in_reply_to_status_id=status.id)
         except KeyboardInterrupt:
             raise
-        except Exception as e:
+        except Exception:
             utils.logger.exception('Error posting.')
 
     def print_status(self, status):
-        utils.logger.info('{id} - "{text}" by {screen_name} via {source}'
-                          .format(id=status.id,
-                                  text=utils.clean(status.text),
-                                  screen_name=status.author.screen_name,
-                                  source=status.source))
+        utils.logger.info('%d - "%s" by %s via %s',
+                          status.id, utils.clean(status.text),
+                          status.author.screen_name, status.source)
 
     def on_error(self, status_code):
-        utils.logger.warning('An error has occured! Status code = {}'
-                             .format(status_code))
+        utils.logger.warning('An error has occured! Status code = %d',
+                             status_code)
         return True  # keep stream alive
 
     def on_timeout(self):

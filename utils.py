@@ -15,17 +15,16 @@ class Logger(object):
         for i in ('requests', 'urllib3', 'tweepy'):
             logging.getLogger(i).setLevel(logging.WARNING)
 
-        format = ('[{filename:>16}:{lineno:<4} {funcName:>16}()] ' +
-                  '{asctime}: {message}')
-        logging.basicConfig(format=format,
-                            style='{',
-                            datefmt='%Y-%m-%d %H:%M:%S',
-                            level=logging.INFO)
+        format_ = ('[{filename:>16}:{lineno:<4} {funcName:>16}()] ' +
+                   '{asctime}: {message}')
+        logging.basicConfig(format=format_, style='{',
+                            datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
         self.logger = logging.getLogger('akari_endlosung')
         self.logger.info('Logger initialised.')
 
     def get_logger(self):
         return self.logger
+
 
 logger = Logger().get_logger()
 
@@ -34,51 +33,52 @@ logger = Logger().get_logger()
 # left: how many requests are left until next reset
 # reset: how many seconds until the rate limit is reset
 def ratelimit_hit(prefix, user, max_=50, ttl=60 * 10):
-    def r(x, y, z, unavailable=False):
-        return dict(allowed=x, left=y, reset=z, unavailable=unavailable)
+    def ret(allowed, left, reset, unavailable=False):
+        return dict(allowed=allowed, left=left, reset=reset,
+                    unavailable=unavailable)
 
     key = str(prefix) + ':' + str(user)
     current_ts = int(time.time())
 
     try:
-        with Config('rate_limits.ini', cached_reads=False) as rl:
+        with Config('rate_limits.ini', cached_reads=False) as rl_cf:
             try:
-                count = rl.get(key, 'count', int)
-                ts = rl.get(key, 'ts', int)
+                count = rl_cf.get(key, 'count', int)
+                ts = rl_cf.get(key, 'ts', int)
                 if ts + ttl > current_ts:  # this rl is still in effect
                     left = ts + ttl - current_ts
                     if count >= max_:  # don't allow this request
-                        return r(False, 0, left)
+                        return ret(False, 0, left)
                     else:  # allow this request and sum it
-                        rl.set(key, 'count', count + 1)
-                        return r(True, max_ - count + 1, left)
+                        rl_cf.set(key, 'count', count + 1)
+                        return ret(True, max_ - count + 1, left)
                 else:  # this rl has expired already, renew it
-                    rl.set(key, 'count', 1)
-                    rl.set(key, 'ts', current_ts)
-                    return r(True, max_ - 1, ttl)
+                    rl_cf.set(key, 'count', 1)
+                    rl_cf.set(key, 'ts', current_ts)
+                    return ret(True, max_ - 1, ttl)
             except KeyError:
                 # new rl
-                rl.set(key, 'count', 1)
-                rl.set(key, 'ts', current_ts)
-                return r(True, max_ - 1, ttl)
+                rl_cf.set(key, 'count', 1)
+                rl_cf.set(key, 'ts', current_ts)
+                return ret(True, max_ - 1, ttl)
     except OSError:
         # file is locked or something, so just allow it
         logger.exception("Couldn't open ratelimit file!")
-        return r(True, 1, 0, unavailable=True)
+        return ret(True, 1, 0, unavailable=True)
 
 
-def timedelta(time):
-    elapsed = time
+def timedelta(time_):
+    elapsed = time_
 
-    if not time:
+    if not time_:
         return 'a moment'
-    elif time > 3600:
+    elif time_ > 3600:
         elapsed //= 3600
         if elapsed == 1:
             return 'one hour'
         else:
             return '%d hours' % elapsed
-    elif time > 60:
+    elif time_ > 60:
         elapsed //= 60
         if elapsed == 1:
             return 'one minute'
@@ -96,6 +96,8 @@ regex_replies = re.compile(r'@[a-zA-Z0-9_]+\s?')
 regex_hashtags = re.compile(r'#[a-zA-Z0-9_]+\s?')
 regex_urls = re.compile(r'https?://[\w\./]*\b')
 regex_whitespace = re.compile(r'\s+')
+
+
 def clean(text, replies=False, hashtags=False, rts=False, urls=False):
     text = text.replace('\n', ' ')
     text = text.replace('\r', ' ')
@@ -126,8 +128,8 @@ def ellipsis(text, max_length):
         return text
 
 
-def decay(time, max_time, coeff):
-    threshold = max_time - time
+def decay(time_, max_time, coeff):
+    threshold = max_time - time_
     if threshold < 0:
         threshold = 0
     return 1 + threshold * (coeff - 1) / max_time

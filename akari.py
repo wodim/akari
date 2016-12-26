@@ -28,10 +28,10 @@ class AkariWandIsRetardedException(Exception):
 
 
 class Akari(object):
-    def __init__(self, text, type='still', shuffle_results=False, **kwargs):
+    def __init__(self, text, type_='still', shuffle_results=False, **kwargs):
         self.text = text
         self.caption = kwargs.get('caption', self.text)
-        self.type = type if type in ('still', 'animation') else 'still'
+        self.type = type_ if type_ in ('still', 'animation') else 'still'
 
         results = ImageSearch(self.text).results[:5]
         if shuffle_results:
@@ -41,12 +41,12 @@ class Akari(object):
             # first, download the result. if it fails, continue for the next
             try:
                 result.download()
-            except ImageResultErrorException as e:
-                utils.logger.info('Error downloading this result: ' + str(e))
+            except ImageResultErrorException as exc:
+                utils.logger.info('Error downloading this result: ' + str(exc))
                 continue
 
             # then, compose it. 3 tries, in case Wand acts funny.
-            for i in range(3):
+            for _ in range(3):
                 try:
                     self.compose(result)
                     return
@@ -154,8 +154,7 @@ class Akari(object):
             msg = 'Wand failed to save the animation.'
             raise AkariWandIsRetardedException(msg)
 
-        utils.logger.info(('Akari composed and saved as "{filename}"'
-                           .format(filename=filename)))
+        utils.logger.info('Akari composed and saved as "%s"', filename)
         self.filename = filename
         self.caption = caption
 
@@ -178,7 +177,7 @@ class Akari(object):
         drawing.font_size = 90
         drawing.fill_color = Color('#000')
         drawing.translate(10, 100)
-        for i in range(8):
+        for _ in range(8):
             drawing.translate(-1, 1)
             drawing.gravity = 'south'
             drawing.text(0, 0, fill(caption, int(drawing.font_size // 3)))
@@ -251,11 +250,10 @@ def akari_cron():
         try:
             caption = utils.clean(status.text,
                                   urls=True, replies=True, rts=True)
-            utils.logger.info('Posting "{caption}" from {tweet_id}'
-                              .format(caption=caption, tweet_id=status.id))
+            utils.logger.info('Posting "%s" from %d', caption, status.id)
             akari = Akari(caption, type='animation', shuffle_results=False)
             break
-        except:
+        except Exception:
             utils.logger.exception('Error generating a caption.')
             continue
 

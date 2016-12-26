@@ -53,7 +53,7 @@ class Config(object):
         return value.strip()
 
     def _to_config_value(self, value):
-        if type(value) == list:
+        if isinstance(value, list):
             return ', '.join(value)
         else:
             return str(value)
@@ -74,24 +74,24 @@ class Config(object):
         self.config.set(section, key, self._to_config_value(value))
 
     def get(self, section, key, type=str):
-        r = self._cache_get(section, key)
+        ret = self._cache_get(section, key)
 
-        if not r:  # cache miss
+        if not ret:  # cache miss
             if type == int:
-                r = self._to_int(self._get(section, key))
+                ret = self._to_int(self._get(section, key))
             elif type == list:
-                r = self._to_list(self._get(section, key))
+                ret = self._to_list(self._get(section, key))
             elif type == 're_list':
-                r = self._to_re_list(self._get(section, key))
+                ret = self._to_re_list(self._get(section, key))
             elif type == 'int_list':
-                r = self._to_int_list(self._get(section, key))
+                ret = self._to_int_list(self._get(section, key))
             elif type == str:
-                r = self._to_str(self._get(section, key))
+                ret = self._to_str(self._get(section, key))
             elif type == bool:
-                r = self._get_bool(section, key)
-            self._cache_set(section, key, r)
+                ret = self._get_bool(section, key)
+            self._cache_set(section, key, ret)
 
-        return r
+        return ret
 
 
 try:

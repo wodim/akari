@@ -20,8 +20,8 @@ class Twitter(object):
             self.auth.set_access_token(access_token, access_token_secret)
             self.api = tweepy.API(self.auth)
             self.me = self.api.me()
-        except tweepy.error.TweepError as e:
-            self.handle_exception(e)
+        except tweepy.error.TweepError as exc:
+            self.handle_exception(exc)
             raise
 
         utils.logger.info('Twitter API initialised.')
@@ -32,25 +32,25 @@ class Twitter(object):
 
         if media:
             status = utils.ellipsis(status, self.MAX_STATUS_WITH_MEDIA_LENGTH)
-            utils.logger.info('Posting "{}" with "{}"'.format(status, media))
+            utils.logger.info('Posting "%s" with "%s"', status, media)
             self.api.update_with_media(media, status=status, **kwargs)
         else:
             status = utils.ellipsis(status, self.MAX_STATUS_LENGTH)
-            utils.logger.info('Posting "{}"'.format(status))
+            utils.logger.info('Posting "%s"', status)
             self.api.update_status(status, **kwargs)
 
         utils.logger.info('Status posted successfully!')
 
-    def extract_exception(self, e):
+    def extract_exception(self, exc):
         # revisit this when tweepy gets its shit together
-        reason = json.loads(e.reason.replace("'", '"'))[0]
+        reason = json.loads(exc.reason.replace("'", '"'))[0]
         return reason['code'], reason['message']
 
-    def handle_exception(self, e):
+    def handle_exception(self, exc):
         if not config.get('mail', 'enabled', type=bool):
             return
 
-        api_code, message = self.extract_exception(e)
+        api_code, message = self.extract_exception(exc)
         user = 'e_%d' % api_code
         rate_limit = utils.ratelimit_hit('twitter_e', user, 1, 7200)
         if not rate_limit['unavailable'] and rate_limit['allowed']:

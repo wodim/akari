@@ -24,7 +24,7 @@ class ImageSearchNoResultsException(Exception):
 
 class GoogleImageSearch(object):
     def __init__(self, text):
-        utils.logger.info('Starting Google image search: "{}"'.format(text))
+        utils.logger.info('Starting Google image search: "%s"', text)
 
         url = 'https://www.google.es/search'
         params = {'tbm': 'isch', 'q': text}
@@ -33,21 +33,19 @@ class GoogleImageSearch(object):
             s = requests.session()
             s.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
             headers = {'User-Agent': config.get('image_search', 'user_agent')}
-            response = s.get(url, params=params, headers=headers,
-                             timeout=3)
-        except (requests.exceptions.RequestException, socket.timeout) as e:
+            response = s.get(url, params=params, headers=headers, timeout=3)
+        except (requests.exceptions.RequestException, socket.timeout):
             raise ImageSearchException('Error making an HTTP request')
 
         if response.status_code != requests.codes.ok:
-            msg = 'Response code not ok ({})'.format(response.status_code)
-            utils.logger.warning(msg)
-            raise ImageSearchException(msg)
+            raise ImageSearchException('Response code not ok (%d)' %
+                                       response.status_code)
 
         try:
             soup = BeautifulSoup(response.text, 'html.parser')
             results_json = [json.loads(x.text) for x in
                             soup.find_all(class_=re.compile('_meta$'))]
-        except Exception as e:
+        except Exception:
             msg = 'Could not decode response'
             utils.logger.exception(msg)
             raise ImageSearchException(msg)
@@ -67,9 +65,8 @@ class ImageSearch(object):
         results = GoogleImageSearch(text).results
 
         if len(results) == 0:
-            utils.logger.warning('No results')
-            msg = 'No results found for "%s"' % text
-            raise ImageSearchNoResultsException(msg)
+            raise ImageSearchNoResultsException('No results found for "%s"' %
+                                                text)
 
         for image_url, source_url in results:
             # check if the source is banned and, in that case, ignore it
@@ -95,15 +92,13 @@ class ImageSearchResult(object):
 
     def download(self):
         try:
-            msg = ('Downloading image "{image_url}" from "{source_url}"'
-                   .format(image_url=self.image_url,
-                           source_url=self.source_url))
-            utils.logger.info(msg)
+            utils.logger.info('Downloading image "%s" from "%s"',
+                              self.image_url, self.source_url)
             # fake the referrer
             response = requests.get(self.image_url,
                                     headers={'Referer': self.source_url},
                                     timeout=5)
-        except (requests.exceptions.RequestException, socket.timeout) as e:
+        except (requests.exceptions.RequestException, socket.timeout):
             # if the download times out, try with the next result
             raise ImageResultErrorException('Timed out')
 
@@ -113,8 +108,7 @@ class ImageSearchResult(object):
 
         # store the image
         filename = self.get_path('original')
-        utils.logger.info('Saving image to "{filename}"'
-                          .format(filename=filename))
+        utils.logger.info('Saving image to "%s"', filename)
         with open(filename, 'wb') as handle:
             for block in response.iter_content(1048576):
                 if not block:
@@ -132,7 +126,7 @@ class ImageSearchResult(object):
         # or if it's too big, try with the next result
         try:
             Image(filename=filename)  # try to get Wand to load it as an image
-        except CorruptImageError as e:
+        except CorruptImageError:
             raise ImageResultErrorException('Not an image')
 
         if os.stat(filename).st_size > 25 * 1024 * 1024:
@@ -148,4 +142,4 @@ class ImageSearchResult(object):
         else:
             ext = 'jpg'
 
-        return 'images/image_{}_{}.{}'.format(self.hash, kind, ext)
+        return 'images/image_%s_%s.%s' % (self.hash, kind, ext)
