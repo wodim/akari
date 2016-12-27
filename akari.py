@@ -28,10 +28,11 @@ class AkariWandIsRetardedException(Exception):
 
 
 class Akari(object):
-    def __init__(self, text, type_='still', shuffle_results=False, **kwargs):
+    def __init__(self, text, type='still', shuffle_results=False,
+                 caption=None):
         self.text = text
-        self.caption = kwargs.get('caption', self.text)
-        self.type = type_ if type_ in ('still', 'animation') else 'still'
+        self.caption = caption if caption else self.text
+        self.type = type if type in ('still', 'animation') else 'still'
 
         results = ImageSearch(self.text).results[:5]
         if shuffle_results:

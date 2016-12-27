@@ -37,17 +37,20 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
+
+        # if after being cleaned the status turns out to be empty, return
         if text == '':
             return
 
-        # ignore those who are not talking to you
+        # if you are not talking to me...
         if not status.text.startswith('@' + twitter.me.screen_name):
-            # store this status
+            # store this status to score it later in akari_cron
             with open('pending.txt', 'a') as p_file:
                 print('%d %s' % (status.id, text), file=p_file)
+            # then return
             return
 
-        # ignore people with less than X followers
+        # apply a strict ratelimit to people with fewer than 25 followers
         rate_limit_slow = utils.ratelimit_hit('twitter', 'global_slow', 5, 60)
         if (status.author.followers_count < 25 and
                 not rate_limit_slow['allowed']):
@@ -55,7 +58,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
                               status.id)
             return
 
-        # check ratelimit
+        # apply a lax ratelimit to the rest of users
         rate_limit = utils.ratelimit_hit('twitter', 'global', 3, 5)
         if not rate_limit['allowed']:
             utils.logger.info('%d - Ignoring because of ratelimit', status.id)
@@ -100,9 +103,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
             image = config.get('twitter', 'error_image')
 
         # start building a reply. prepend @nick of whoever we are replying to
-        reply = '@' + status.author.screen_name
-        if text:
-            reply += ' ' + text
+        reply = '@%s %s' % (status.author.screen_name, text)
 
         # post it
         try:
