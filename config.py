@@ -5,11 +5,15 @@ import sys
 from cache import cache
 
 
+class ConfigCacheMissError(Exception):
+    pass
+
+
 class Config(object):
-    def __init__(self, filename, cached_reads=True):
+    def __init__(self, filename, cached=True):
         self.config = configparser.ConfigParser()
         self.filename = filename
-        self.cached_reads = cached_reads
+        self.cached = cached
 
         try:
             with open(self.filename) as fp:
@@ -52,31 +56,34 @@ class Config(object):
     def _to_str(self, value):
         return value.strip()
 
-    def _to_config_value(self, value):
+    def _to_config_str(self, value):
         if isinstance(value, list):
             return ', '.join(value)
         else:
             return str(value)
 
     def _cache_get(self, section, key):
-        if self.cached_reads:
-            return cache.get('%s:%s' % (section, key))
-        else:
-            return None
+        if not self.cached:
+            raise ConfigCacheMissError('caching is disabled')
+
+        ret = cache.get('%s:%s' % (section, key))
+        if not ret:
+            raise ConfigCacheMissError('key not in cache')
+        return ret
 
     def _cache_set(self, section, key, value):
-        return cache.set('%s:%s' % (section, key), value)
+        if self.cached:
+            return cache.set('%s:%s' % (section, key), value)
 
     def set(self, section, key, value):
         if not self.config.has_section(section):
             self.config.add_section(section)
-
-        self.config.set(section, key, self._to_config_value(value))
+        self.config.set(section, key, self._to_config_str(value))
 
     def get(self, section, key, type=str):
-        ret = self._cache_get(section, key)
-
-        if not ret:  # cache miss
+        try:
+            return self._cache_get(section, key)
+        except ConfigCacheMissError:
             if type == int:
                 ret = self._to_int(self._get(section, key))
             elif type == list:
@@ -90,8 +97,7 @@ class Config(object):
             elif type == bool:
                 ret = self._get_bool(section, key)
             self._cache_set(section, key, ret)
-
-        return ret
+            return ret
 
 
 try:

@@ -1,5 +1,5 @@
 import functools
-from html import unescape
+import html
 import logging
 import re
 import threading
@@ -41,7 +41,7 @@ def ratelimit_hit(prefix, user, max_=50, ttl=60 * 10):
     current_ts = int(time.time())
 
     try:
-        with Config('rate_limits.ini', cached_reads=False) as rl_cf:
+        with Config('rate_limits.ini', cached=False) as rl_cf:
             try:
                 count = rl_cf.get(key, 'count', int)
                 ts = rl_cf.get(key, 'ts', int)
@@ -101,7 +101,7 @@ regex_whitespace = re.compile(r'\s+')
 def clean(text, replies=False, hashtags=False, rts=False, urls=False):
     text = text.replace('\n', ' ')
     text = text.replace('\r', ' ')
-    text = unescape(text)
+    text = html.unescape(text)
 
     if rts:
         text = regex_rts.sub('', text)
