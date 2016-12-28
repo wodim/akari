@@ -197,14 +197,13 @@ def akari_cron():
             id_, text = line.split(' ', 1)
 
             # if the blacklist is enabled, ignore tweets that match it
-            text_blacklist = config.get('twitter', 'text_blacklist',
-                                        type='re_list')
-            if any(x.search(text) for x in text_blacklist):
+            blacklist = config.get('twitter', 'text_blacklist', type='re_list')
+            if any(x.search(text) for x in blacklist):
                 continue
 
-            # (tweet length - hardcoded jp crap) / 2 -> (140 - 10) / 2
+            # (tweet length - hardcoded jp crap) / 2 -> (140 - 10) / 2 - fluff
             # anything over that would not fit in a tweet, so ignore it
-            if len(text) > 65:
+            if len(text) > 60:
                 continue
 
             # alright, this tweet is a candidate

@@ -25,9 +25,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # if the sources whitelist is enabled, ignore those who aren't on it
-        sources_whitelist = config.get('twitter', 'sources_whitelist',
-                                       type=list)
-        if status.source not in sources_whitelist:
+        whitelist = config.get('twitter', 'sources_whitelist', type=list)
+        if whitelist and status.source not in whitelist:
             return
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
@@ -38,11 +37,6 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # if you are not talking to me...
         if not status.text.startswith('@' + twitter.me.screen_name):
-            # don't store tweets that match the blacklist
-            blacklist = config.get('twitter', 'text_blacklist', type='re_list')
-            if any(x.search(status.text) for x in blacklist):
-                return
-
             # store this status to score it later in akari_cron
             with open('pending.txt', 'a') as p_file:
                 print('%d %s' % (status.id, text), file=p_file)
