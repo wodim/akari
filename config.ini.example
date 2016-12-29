@@ -35,6 +35,10 @@ text_blacklist = @FAMOUSdotAF, \bfavs?\b
 no_results_image = assets/no-results.gif
 error_image = assets/out-of-service.gif
 
+; Completely override the scoring algorithm of akari_cron() and publish this
+; instead.
+cron_override =
+
 [telegram]
 ; You can talk to the BotFather on Telegram to create an account for the bot.
 ; Once you've created it, you'll receive a token, which is what you need to put

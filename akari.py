@@ -188,6 +188,15 @@ class Akari(object):
 
 
 def akari_cron():
+    # if there's an override, try to post it, but if it fails, continue
+    # normally.
+    try:
+        cron_override = config.get('twitter', 'cron_override')
+        if cron_override and akari_cron_override(cron_override):
+            return
+    except KeyError:
+        pass
+
     from twitter import twitter
 
     ids = []
@@ -265,6 +274,15 @@ def akari_cron():
     # if a new caption has been successfully published, empty the file
     with open('pending.txt', 'w'):
         pass
+
+
+def akari_cron_override(caption):
+    from twitter import twitter
+
+    utils.logger.info('Overriding cron with "%s"!', caption)
+    akari = Akari(caption, type='animation', shuffle_results=False)
+    twitter.post(status=akari.caption, media=akari.filename)
+    return True
 
 
 # like akari_cron(), but it forces a certain caption to be published

@@ -32,8 +32,10 @@ class Config(object):
     def _get(self, section, key):
         try:
             return self.config.get(section, key)
-        except (configparser.NoSectionError, configparser.NoOptionError):
+        except configparser.NoSectionError:
             raise KeyError('No such section')
+        except configparser.NoOptionError:
+            raise KeyError('No such option')
 
     def _get_bool(self, section, key):
         return self.config.getboolean(section, key)
