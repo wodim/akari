@@ -14,8 +14,14 @@ def follow_my_followers():
                                   user.screen_name, user.id)
                 try:
                     user.follow()
-                except tweepy.error.TweepError:
+                except tweepy.error.TweepError as exc:
                     utils.logger.exception('Error following.')
+                    if exc.api_code == 161:
+                        # "you are unable to follow more people at this time"
+                        # don't keep trying because it will just not work.
+                        msg = "Can't follow anyone else. Giving up."
+                        utils.logger.info(msg)
+                        return
 
 
 def unfollow_my_unfollowers():
