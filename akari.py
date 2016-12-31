@@ -223,15 +223,15 @@ def akari_cron():
         favs = status.favorite_count
         rts = status.retweet_count
         followers = status.user.followers_count
-        if followers == 0 or followers < median * 1.5:
+        if followers == 0 or followers < median * 0.7:
             return -1
 
         # decay coefficient. promotes newer tweets to compensate for the
         # lower amount of favs they have received (fewer people have seen
         # them, in theory)
         diff = (datetime.utcnow() - status.created_at).total_seconds()
-        score = utils.decay(diff, 20 * 60, 1.5)
-        score *= (favs + rts * 0.5) / followers
+        score = utils.decay(diff, 20 * 60, 1.2)
+        score *= (favs - rts * 0.1) / followers
 
         # filter garbage. at least 80% of letters in the status must be
         # /a-zA-Z/, or there's a big penalty
