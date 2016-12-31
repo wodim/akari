@@ -45,15 +45,15 @@ settings are explained inside the file as comments.
 
 About the crontab:
 
-*/20 * * * * from akari import akari_cron; akari_cron()
+*/20 * * * * import akari; akari.akari_cron()
 Every twenty minutes, generate a new caption based on the last tweets.
 Those tweets are stored in pending.txt. The file is emptied once a new caption
 has been successfully published.
 
-*/15 * * * * from followers import follow_my_followers; follow_my_followers()
+*/15 * * * * import tasks; tasks.follow_my_followers()
 Every fifteen minutes, check for new followers, and then follow them back.
 
-0 6 * * * from followers import unfollow_my_unfollowers; unfollow_my_unfollowers()"
+0 6 * * * import tasks; tasks.unfollow_my_unfollowers()"
 Every night at 6:00, check for users I follow but who no longer follow me back
 and unfollow them.
 

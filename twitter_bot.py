@@ -4,7 +4,7 @@ import tweepy
 
 from akari import Akari
 from config import config
-from followers import is_eligible
+from tasks import is_eligible
 from image_search import ImageSearchNoResultsException
 from twitter import twitter
 import utils

@@ -1,5 +1,6 @@
 import tweepy
 
+from config import config
 from twitter import twitter
 import utils
 
@@ -47,3 +48,31 @@ def is_eligible(user):
         return False
 
     return True
+
+
+def retweet_promo_tweet():
+    promo_tweet_id = config.get('twitter', 'promo_tweet_id', type=int)
+    try:
+        tweet = twitter.api.get_status(promo_tweet_id, include_my_retweet=True)
+    except tweepy.error.TweepError:
+        utils.logger.error('Error retrieving info about the promo tweet.')
+        raise
+
+    try:
+        current_rt_id = tweet.current_user_retweet['id']
+        utils.logger.info('Undoing previous retweet of the promo tweet.')
+        twitter.api.destroy_status(current_rt_id)
+    except AttributeError:
+        # this happens when there was no retweet to undo
+        pass
+    except tweepy.error.TweepError:
+        utils.logger.error('Error undoing the retweet.')
+        raise  # if there was an error undoing the retweet, give up
+
+    try:
+        twitter.api.retweet(promo_tweet_id)
+    except tweepy.error.TweepError:
+        utils.logger.error('Error retweeting the promo tweet.')
+        raise
+
+    utils.logger.info('Promo tweet retweeted.')

@@ -39,6 +39,10 @@ error_image = assets/out-of-service.gif
 ; instead.
 cron_override =
 
+; This tweet id will be retweeted when tasks.retweet_promo_tweet() is called.
+; If there's a previous retweet, it'll be undone first.
+promo_tweet_id =
+
 [telegram]
 ; You can talk to the BotFather on Telegram to create an account for the bot.
 ; Once you've created it, you'll receive a token, which is what you need to put
