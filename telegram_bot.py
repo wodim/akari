@@ -35,6 +35,9 @@ class TelegramBot(telepot.aio.Bot):
                 return
 
             name = self.format_name(message)
+            if not name:
+                utils.logger.warning('Message without a "from" field received')
+                return
             longname = '{chat_id} ({name})'.format(chat_id=chat_id, name=name)
             utils.logger.info('Message from %s: "%s"',
                               longname, message['text'])
@@ -67,7 +70,7 @@ class TelegramBot(telepot.aio.Bot):
 
             # first, search...
             try:
-                akari = Akari(message['text'], type='still',
+                akari = Akari(message['text'], type='animation',
                               shuffle_results=True)
             except ImageSearchNoResultsException:
                 utils.logger.exception('Error searching for %s', longname)
@@ -75,27 +78,41 @@ class TelegramBot(telepot.aio.Bot):
                 return
 
             # then, if successful, send the pic
-            await self.send_message(message, akari.caption,
+            await self.send_message(message, type='file',
                                     filename=akari.filename)
         except Exception:
             utils.logger.exception('Error handling %s (%s)',
                                    longname, message['chat']['type'])
             await self.send_message(message, 'Sorry, try again.')
 
-    async def send_message(self, message, caption, filename=None,
-                           no_preview=False):
+    async def send_message(self, message, caption=None, filename=None,
+                           type='text', no_preview=False):
         """helper function to send messages to users."""
-        if filename:
+        if type == 'text':
+            if not caption:
+                raise ValueError('You need a caption parameter to send text')
+            text = utils.ellipsis(caption, 4096)
+            await self.sendMessage(message['chat']['id'], text,
+                                   disable_web_page_preview=no_preview)
+        elif type == 'image':
+            if not filename:
+                raise ValueError('You need a file parameter to send an image')
             caption = utils.ellipsis(caption, 200)
             with open(filename, 'rb') as f:
                 await self.sendPhoto(message['chat']['id'], f, caption=caption)
-        else:
-            caption = utils.ellipsis(caption, 4096)
-            await self.sendMessage(message['chat']['id'], caption,
-                                   disable_web_page_preview=no_preview)
+        elif type == 'file':
+            if not filename:
+                raise ValueError('You need a file parameter to send a file')
+            if caption:
+                raise ValueError("You can't send a caption with a file")
+            with open(filename, 'rb') as f:
+                await self.sendDocument(message['chat']['id'], f)
 
-    def format_name(self, message):
+    @staticmethod
+    def format_name(message):
         """formats a "from" property into a string"""
+        if 'from' not in message:
+            return None
         longname = []
         if 'username' in message['from']:
             longname.append('@' + message['from']['username'])
