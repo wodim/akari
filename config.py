@@ -47,7 +47,7 @@ class Config(object):
         if value.strip() == '':
             return []
         else:
-            return [x.strip() for x in value.split(',')]
+            return [x.strip() for x in value.split(', ')]
 
     def _to_int_list(self, value):
         return [int(x) for x in self._to_list(value)]
