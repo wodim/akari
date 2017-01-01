@@ -32,7 +32,9 @@ class Akari(object):
                  caption=None):
         self.text = text
         self.caption = caption if caption else self.text
-        self.type = type if type in ('still', 'animation') else 'still'
+        if type not in ('still', 'animation'):
+            raise ValueError('Incorrect Akari type "%s"' % type)
+        self.type = type
 
         results = ImageSearch(self.text).results[:5]
         if shuffle_results:
