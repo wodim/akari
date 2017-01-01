@@ -212,7 +212,7 @@ def akari_cron():
 
             # (tweet length - hardcoded jp crap) / 2 -> (140 - 10) / 2 - fluff
             # anything over that would not fit in a tweet, so ignore it
-            if len(text) > 80:
+            if len(text) > 60:
                 continue
 
             # alright, this tweet is a candidate
