@@ -105,6 +105,10 @@ class TwitterBot(tweepy.streaming.StreamListener):
                          in_reply_to_status_id=status.id)
         except KeyboardInterrupt:
             raise
+        except tweepy.error.TweepError as exc:
+            utils.logger.exception('Error posting.')
+            if exc.api_code == 326:  # account temporarily locked
+                twitter.handle_exception(exc)
         except Exception:
             utils.logger.exception('Error posting.')
 
