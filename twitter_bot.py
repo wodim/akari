@@ -5,13 +5,9 @@ import tweepy
 from akari import Akari
 from config import config
 from tasks import is_eligible
-from image_search import ImageSearchNoResultsException
+from image_search import ImageSearchNoResultsError
 from twitter import twitter
 import utils
-
-
-class StreamException(Exception):
-    pass
 
 
 class TwitterBot(tweepy.streaming.StreamListener):
@@ -60,11 +56,11 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # so we'll generate something for this guy...
         # this is in a function of its own with a "new thread" decorator
-        self.print_status(status)
-        self.process(status, text)
+        self._print_status(status)
+        self._process(status, text)
 
     @utils.background
-    def process(self, status, text):
+    def _process(self, status, text):
         # follow the user if he's new. if he does not follow back, he'll
         # be unfollowed by followers.unfollow_my_unfollowers sometime later.
         if is_eligible(status.author):
@@ -77,12 +73,12 @@ class TwitterBot(tweepy.streaming.StreamListener):
             akari = Akari(text, type='animation', shuffle_results=True)
             text = akari.caption
             image = akari.filename
-        except ImageSearchNoResultsException:
+        except ImageSearchNoResultsError:
             utils.logger.exception('No results')
             msgs = ('I found nothing.',
                     'No results.',
-                    "I don't understand...",
-                    "I don't know what you mean by that.")
+                    "I didn't find anything.",
+                    'There are no results.')
             text = random.choice(msgs)
             image = config.get('twitter', 'no_results_image')
         except KeyboardInterrupt:
@@ -112,7 +108,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
         except Exception:
             utils.logger.exception('Error posting.')
 
-    def print_status(self, status):
+    def _print_status(self, status):
         utils.logger.info('%d - "%s" by %s via %s',
                           status.id, utils.clean(status.text),
                           status.author.screen_name, status.source)

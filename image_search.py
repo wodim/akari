@@ -14,11 +14,11 @@ from config import config
 import utils
 
 
-class ImageSearchException(Exception):
+class ImageSearchError(Exception):
     pass
 
 
-class ImageSearchNoResultsException(Exception):
+class ImageSearchNoResultsError(Exception):
     pass
 
 
@@ -35,11 +35,11 @@ class GoogleImageSearch(object):
             headers = {'User-Agent': config.get('image_search', 'user_agent')}
             response = s.get(url, params=params, headers=headers, timeout=3)
         except (requests.exceptions.RequestException, socket.timeout):
-            raise ImageSearchException('Error making an HTTP request')
+            raise ImageSearchError('Error making an HTTP request')
 
         if response.status_code != requests.codes.ok:
-            raise ImageSearchException('Response code not ok (%d)' %
-                                       response.status_code)
+            raise ImageSearchError('Response code not ok (%d)' %
+                                   response.status_code)
 
         try:
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -48,7 +48,7 @@ class GoogleImageSearch(object):
         except Exception:
             msg = 'Could not decode response'
             utils.logger.exception(msg)
-            raise ImageSearchException(msg)
+            raise ImageSearchError(msg)
 
         results = []
         for result_json in results_json:
@@ -65,21 +65,20 @@ class ImageSearch(object):
         results = GoogleImageSearch(text).results
 
         if len(results) == 0:
-            raise ImageSearchNoResultsException('No results found for "%s"' %
-                                                text)
+            raise ImageSearchNoResultsError('No results found for "%s"' % text)
 
         for image_url, source_url in results:
             # check if the source is banned and, in that case, ignore it
             banned_sources = config.get('image_search', 'banned_sources',
                                         type=list)
-            if any(x in source_url for x in banned_sources or
-                   x in image_url for x in banned_sources):
+            if (any(x in source_url for x in banned_sources) or
+                    any(x in image_url for x in banned_sources)):
                 continue
 
             self.results.append(ImageSearchResult(image_url, source_url, text))
 
 
-class ImageResultErrorException(Exception):
+class ImageSearchResultError(Exception):
     pass
 
 
@@ -102,11 +101,11 @@ class ImageSearchResult(object):
                                     timeout=5)
         except (requests.exceptions.RequestException, socket.timeout):
             # if the download times out, try with the next result
-            raise ImageResultErrorException('Timed out')
+            raise ImageSearchResultError('Timed out')
 
         # if the download fails (404, ...), try with the next result
         if response.status_code != requests.codes.ok:
-            raise ImageResultErrorException('Download of image failed')
+            raise ImageSearchResultError('Download of image failed')
 
         # store the image
         filename = self.get_path('original')
@@ -129,10 +128,10 @@ class ImageSearchResult(object):
         try:
             Image(filename=filename)  # try to get Wand to load it as an image
         except CorruptImageError:
-            raise ImageResultErrorException('Not an image')
+            raise ImageSearchResultError('Not an image')
 
         if os.stat(filename).st_size > 25 * 1024 * 1024:
-            raise ImageResultErrorException('Image too big')
+            raise ImageSearchResultError('Image too big')
 
         utils.logger.info('Complete')
 

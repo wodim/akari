@@ -5,12 +5,8 @@ import telepot.aio
 
 from akari import Akari
 from config import config
-from image_search import ImageSearchNoResultsException
+from image_search import ImageSearchNoResultsError
 import utils
-
-
-class TelegramBotException(Exception):
-    pass
 
 
 class TelegramBot(telepot.aio.Bot):
@@ -61,7 +57,7 @@ class TelegramBot(telepot.aio.Bot):
                 if not rate_limit['allowed']:
                     msg = 'Message from %s: throttled (resets in %d seconds)'
                     utils.logger.warning(msg, longname, rate_limit['reset'])
-                    msg = ('Not so fast! Try again in %d.' %
+                    msg = ('Not so fast! Try again in %s.' %
                            utils.timedelta(rate_limit['reset']))
                     await self.send_message(message, msg)
                     return
@@ -72,8 +68,7 @@ class TelegramBot(telepot.aio.Bot):
             try:
                 akari = Akari(message['text'], type='animation',
                               shuffle_results=True)
-            except ImageSearchNoResultsException:
-                utils.logger.exception('Error searching for %s', longname)
+            except ImageSearchNoResultsError:
                 await self.send_message(message, 'No results.')
                 return
 

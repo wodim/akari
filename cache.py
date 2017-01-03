@@ -13,4 +13,5 @@ class Cache(object):
         self.cache[key] = value
 
 
+# this is a global, shared instance of Cache to be used by anybody
 cache = Cache()

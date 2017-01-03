@@ -11,19 +11,19 @@ from wand.image import Image
 
 from cache import cache
 from config import config
-from image_search import ImageSearch, ImageResultErrorException
+from image_search import ImageSearch, ImageSearchResultError
 import utils
 
 
-class AkariAnimationTooLargeException(Exception):
+class AkariTooBigError(Exception):
     pass
 
 
-class AkariFailedToGenerateAkariException(Exception):
+class AkariComposingError(Exception):
     pass
 
 
-class AkariWandIsRetardedException(Exception):
+class AkariWandIsRetardedError(Exception):
     pass
 
 
@@ -44,7 +44,7 @@ class Akari(object):
             # first, download the result. if it fails, continue for the next
             try:
                 result.download()
-            except ImageResultErrorException as exc:
+            except ImageSearchResultError as exc:
                 utils.logger.info('Error downloading this result: ' + str(exc))
                 continue
 
@@ -53,17 +53,16 @@ class Akari(object):
                 try:
                     self.compose(result)
                     return
-                except AkariAnimationTooLargeException:
+                except AkariTooBigError:
                     utils.logger.info('Composed an animation that is too big.')
                     # a retry would generate the same gif with the same
                     # problem, so don't do that. go for the next result.
                     break
-                except AkariWandIsRetardedException:
+                except AkariWandIsRetardedError:
                     # this, we want to retry it
                     utils.logger.info('Wand failed to save the animation.')
 
-        msg = 'Could not generate an image.'
-        raise AkariFailedToGenerateAkariException(msg)
+        raise AkariComposingError('Could not generate an image.')
 
     def compose(self, image):
         utils.logger.info('Starting to compose Akari...')
@@ -108,9 +107,9 @@ class Akari(object):
 
         # generate the drawing to be applied to each frame
         if config.get('akari', 'caption_type') == 'seinfeld':
-            caption, drawing = self.caption_seinfeld()
+            caption, drawing = self._caption_seinfeld()
         else:
-            caption, drawing = self.caption_akari()
+            caption, drawing = self._caption_akari()
 
         result = Image()  # this will be the resulting image
         for akari_frame in akari_frames:
@@ -149,19 +148,17 @@ class Akari(object):
             # if the gif is too big, it has to be discarded. a new one
             # will be generated using a different image this time.
             if os.path.getsize(filename) > 3072 * 1024:
-                msg = 'Composed an animation that is too big.'
-                raise AkariAnimationTooLargeException(msg)
+                raise AkariTooBigError('Composed an animation that is too big')
         except FileNotFoundError:
             # sometimes Wand fails to save the animation, and does not even
             # raise an exception. retry in this case.
-            msg = 'Wand failed to save the animation.'
-            raise AkariWandIsRetardedException(msg)
+            raise AkariWandIsRetardedError('Wand failed to save the animation')
 
         utils.logger.info('Akari composed and saved as "%s"', filename)
         self.filename = filename
         self.caption = caption
 
-    def caption_akari(self):
+    def _caption_akari(self):
         caption = 'わぁい{0} あかり{0}大好き'.format(self.text)
         drawing = Drawing()
         drawing.font = 'assets/fonts/rounded-mgenplus-1c-bold.ttf'
@@ -173,7 +170,7 @@ class Akari(object):
         drawing.text(0, 0, fill(caption, 24))
         return caption, drawing
 
-    def caption_seinfeld(self):
+    def _caption_seinfeld(self):
         caption = self.text
         drawing = Drawing()
         drawing.font = 'assets/fonts/NimbusSanL-RegIta.otf'
@@ -196,7 +193,7 @@ def akari_cron():
         cron_override = config.get('twitter', 'cron_override')
         if cron_override and akari_cron_override(cron_override):
             return
-    except KeyError:
+    except Exception:
         pass
 
     from twitter import twitter
