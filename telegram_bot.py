@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 import telepot
 import telepot.aio
@@ -20,6 +21,16 @@ class TelegramBot(telepot.aio.Bot):
                       'example:\n/akari french fries')
     INVALID_CMD = ("I don't know what you mean by that. If you need help, "
                    'use /help.')
+    COMPOSING_MSGS = ('Okay, hold on a second...',
+                      'Wait a moment...',
+                      "I'm working on it...",
+                      "This shouldn't take long...",
+                      'Hold on...',
+                      "I'll see what I can do...",
+                      'Sit tight...',
+                      'Give me a moment...',
+                      'Hmm, wait...')
+
 
     PRIVATE_CHATS = ('private',)
     PUBLIC_CHATS = ('group', 'supergroup')
@@ -97,8 +108,8 @@ class TelegramBot(telepot.aio.Bot):
                                             quote_msg_id=msg_id)
                     return
 
-            await self.send_message(message, 'Okay, hold on a second...',
-                                    quote_msg_id=msg_id)
+            msg = random.choice(self.COMPOSING_MSGS)
+            await self.send_message(message, msg, quote_msg_id=msg_id)
 
             # first, search...
             try:
