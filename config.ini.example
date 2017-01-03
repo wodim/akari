@@ -57,6 +57,9 @@ token =
 ; of obtaining it; you can launch the bot, talk to it, and read the log.
 rate_limit_exemptions =
 
+; The user name of your bot.
+username =
+
 [image_search]
 ; List of domains that are ignored when searching for images.
 banned_sources = desmotivaciones.es, akifrases.com, cartelescreativos.com, izquotes.com

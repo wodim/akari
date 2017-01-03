@@ -15,21 +15,40 @@ class TelegramBot(telepot.aio.Bot):
                     'to search for.\n'
                     'You can also ask me to create GIFs for you on Twitter: '
                     'https://twitter.com/akari_shoah')
+    HELP_MESSAGE_G = ("Hey! I'm Akari Shoah.\n"
+                      'If you want an image, use the /akari command. For '
+                      'example:\n/akari french fries')
     INVALID_CMD = ("I don't know what you mean by that. If you need help, "
                    'use /help.')
+
+    PRIVATE_CHATS = ('private',)
+    PUBLIC_CHATS = ('group', 'supergroup')
+
+    username = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._answerer = telepot.aio.helper.Answerer(self)
+        self.username = config.get('telegram', 'username')
 
     async def on_chat_message(self, message):
         try:
-            content_type, _, chat_id = telepot.glance(message)
+            content_type, chat_type, chat_id, _, msg_id = \
+                telepot.glance(message, long=True)
 
+            # we only work with "text" messages
             if content_type != 'text':
-                await self.send_message(message, self.INVALID_CMD)
+                if chat_type in self.PRIVATE_CHATS:
+                    # only do this if it's a privmsg
+                    await self.send_message(message, self.INVALID_CMD,
+                                            quote_msg_id=msg_id)
                 return
 
+            # we only work in private, groups and supergroups
+            if chat_type not in self.PRIVATE_CHATS + self.PUBLIC_CHATS:
+                return
+
+            # get the name of the user and log it
             name = self.format_name(message)
             if not name:
                 utils.logger.warning('Message without a "from" field received')
@@ -38,18 +57,33 @@ class TelegramBot(telepot.aio.Bot):
             utils.logger.info('Message from %s: "%s"',
                               longname, message['text'])
 
+            # commands need special handling
             if message['text'].startswith('/'):
-                command = message['text'].split(' ')[0][1:]
-                if command == 'help':
-                    msg = self.HELP_MESSAGE
-                elif command == 'start':
-                    msg = self.HELP_MESSAGE
-                else:
-                    msg = self.INVALID_CMD
-                await self.send_message(message, msg, no_preview=True)
+                command, rest = self._get_command(message['text'])
+                akari_commands = ('akari', 'akari@' + self.username)
+
+                if command not in akari_commands:
+                    if chat_type in self.PRIVATE_CHATS:
+                        if command in ('help', 'start'):
+                            msg = self.HELP_MESSAGE
+                        else:
+                            msg = self.INVALID_CMD
+                        await self.send_message(message, msg, no_preview=True,
+                                                quote_msg_id=msg_id)
+                        return
+                    elif chat_type in self.PUBLIC_CHATS:
+                        return  # unknown cmd, this was meant for another bot
+            else:
+                rest = message['text'].strip()
+
+            # if the resulting message is empty...
+            if not rest:
+                if chat_type in self.PUBLIC_CHATS:  # only show this in groups
+                    await self.send_message(message, self.HELP_MESSAGE_G,
+                                            quote_msg_id=msg_id)
                 return
 
-            # check rate limit
+            # check rate limit if this chat id is not exempt from them
             exemptions = config.get('telegram', 'rate_limit_exemptions',
                                     type='int_list')
             if chat_id not in exemptions:
@@ -59,49 +93,65 @@ class TelegramBot(telepot.aio.Bot):
                     utils.logger.warning(msg, longname, rate_limit['reset'])
                     msg = ('Not so fast! Try again in %s.' %
                            utils.timedelta(rate_limit['reset']))
-                    await self.send_message(message, msg)
+                    await self.send_message(message, msg,
+                                            quote_msg_id=msg_id)
                     return
 
-            await self.sendChatAction(chat_id, 'upload_photo')
+            await self.send_message(message, 'Okay, hold on a second...',
+                                    quote_msg_id=msg_id)
 
             # first, search...
             try:
-                akari = Akari(message['text'], type='animation',
-                              shuffle_results=True)
+                akari = Akari(rest, type='animation', shuffle_results=True)
             except ImageSearchNoResultsError:
-                await self.send_message(message, 'No results.')
+                await self.send_message(message, 'No results.',
+                                        quote_msg_id=msg_id)
                 return
 
             # then, if successful, send the pic
+            utils.logger.info('Sending %s to %s', akari.filename, longname)
             await self.send_message(message, type='file',
-                                    filename=akari.filename)
+                                    filename=akari.filename,
+                                    quote_msg_id=msg_id)
         except Exception:
             utils.logger.exception('Error handling %s (%s)',
                                    longname, message['chat']['type'])
-            await self.send_message(message, 'Sorry, try again.')
+            await self.send_message(message, 'Sorry, try again.',
+                                    quote_msg_id=msg_id)
 
     async def send_message(self, message, caption=None, filename=None,
-                           type='text', no_preview=False):
+                           type='text', no_preview=False,
+                           quote_msg_id=None):
         """helper function to send messages to users."""
         if type == 'text':
             if not caption:
                 raise ValueError('You need a caption parameter to send text')
             text = utils.ellipsis(caption, 4096)
             await self.sendMessage(message['chat']['id'], text,
-                                   disable_web_page_preview=no_preview)
+                                   disable_web_page_preview=no_preview,
+                                   reply_to_message_id=quote_msg_id)
         elif type == 'image':
             if not filename:
                 raise ValueError('You need a file parameter to send an image')
             caption = utils.ellipsis(caption, 200)
             with open(filename, 'rb') as f:
-                await self.sendPhoto(message['chat']['id'], f, caption=caption)
+                await self.sendPhoto(message['chat']['id'], f, caption=caption,
+                                     reply_to_message_id=quote_msg_id)
         elif type == 'file':
             if not filename:
                 raise ValueError('You need a file parameter to send a file')
             if caption:
                 raise ValueError("You can't send a caption with a file")
             with open(filename, 'rb') as f:
-                await self.sendDocument(message['chat']['id'], f)
+                await self.sendDocument(message['chat']['id'], f,
+                                        reply_to_message_id=quote_msg_id)
+
+    @staticmethod
+    def _get_command(text):
+        command, _, rest = text.partition(' ')
+        command = command[1:]
+        rest = rest.strip()
+        return command, rest
 
     @staticmethod
     def format_name(message):
