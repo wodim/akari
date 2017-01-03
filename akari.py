@@ -163,10 +163,19 @@ class Akari(object):
         drawing = Drawing()
         drawing.font = 'assets/fonts/rounded-mgenplus-1c-bold.ttf'
         drawing.font_size = 50
-        drawing.fill_color = Color('#fff')
-        drawing.stroke_color = Color('#000')
-        drawing.stroke_width = 1
         drawing.gravity = 'south'
+        drawing.text_interline_spacing = drawing.font_size / -5
+        # first the shadow
+        drawing.translate(3, -3)
+        drawing.fill_color = Color('#000')
+        drawing.fill_opacity = 0.5
+        drawing.text(0, 0, fill(caption, 24))
+        # then the text
+        drawing.translate(-3, 3)
+        drawing.fill_color = Color('#fff')
+        drawing.fill_opacity = 1
+        drawing.stroke_color = Color('#000')
+        drawing.stroke_width = 1.5
         drawing.text(0, 0, fill(caption, 24))
         return caption, drawing
 
