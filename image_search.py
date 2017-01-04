@@ -7,7 +7,7 @@ import uuid
 
 from bs4 import BeautifulSoup
 import requests
-from wand.exceptions import CorruptImageError
+from wand.exceptions import ImageError, CorruptImageError, CoderError
 from wand.image import Image
 
 from config import config
@@ -123,15 +123,18 @@ class ImageSearchResult(object):
             handle.write('source:\t' + self.source_url + '\n')
             handle.write('query:\t' + self.text + '\n')
 
-        # if it's not an image (referrer trap, catch-all html 404...)
-        # or if it's too big, try with the next result
-        try:
-            Image(filename=filename)  # try to get Wand to load it as an image
-        except CorruptImageError:
-            raise ImageSearchResultError('Not an image')
-
+        # check the size of the image before loading it into memory
         if os.stat(filename).st_size > 25 * 1024 * 1024:
             raise ImageSearchResultError('Image too big')
+
+        # try to get Wand to load it as an image. if that doesn't work, raise
+        # an exception so that we try with the next result
+        try:
+            image = Image(filename=filename)
+        except (ImageError, CorruptImageError, CoderError):
+            raise ImageSearchResultError('Not an image')
+        else:
+            image.destroy()
 
         utils.logger.info('Complete')
 
