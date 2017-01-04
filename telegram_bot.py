@@ -31,7 +31,6 @@ class TelegramBot(telepot.aio.Bot):
                       'Give me a moment...',
                       'Hmm, wait...')
 
-
     PRIVATE_CHATS = ('private',)
     PUBLIC_CHATS = ('group', 'supergroup')
 

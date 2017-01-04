@@ -26,7 +26,24 @@ class Twitter(object):
 
         utils.logger.info('Twitter API initialised.')
 
-    def post(self, status='', media=None, **kwargs):
+    def post(self, status='', media=None, retries=5, **kwargs):
+        # this is a wrapper around _post() so it's retried several times
+        # if there's a server-side exception.
+        for _ in range(retries):
+            try:
+                self._post(status=status, media=media, **kwargs)
+            except (tweepy.error.TweepError,
+                    tweepy.error.RateLimitError) as exc:
+                api_code, message = self.extract_exception(exc)
+                if api_code == 130:
+                    # over capacity
+                    utils.logger.info('Twitter is over capacity. Retrying...')
+                else:
+                    raise
+            else:
+                return
+
+    def _post(self, status, media, **kwargs):
         if not status and not media:
             raise ValueError('Nothing to post.')
 
