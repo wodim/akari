@@ -35,7 +35,7 @@ class Twitter(object):
             except (tweepy.error.TweepError,
                     tweepy.error.RateLimitError) as exc:
                 api_code, message = self.extract_exception(exc)
-                if api_code in {130, 131}: # over capacity, internal error
+                if api_code in {130, 131}:  # over capacity, internal error
                     utils.logger.info('Server-side error. Retrying...')
                 else:
                     raise
