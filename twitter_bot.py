@@ -49,7 +49,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # apply a lax ratelimit to the rest of users
-        rate_limit = utils.ratelimit_hit('twitter', 'global', 3, 5)
+        rate_limit = utils.ratelimit_hit('twitter', 'global', 20, 60)
         if not rate_limit['allowed']:
             utils.logger.info('%d - Ignoring because of ratelimit', status.id)
             return
