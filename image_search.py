@@ -7,7 +7,6 @@ import uuid
 
 from bs4 import BeautifulSoup
 import requests
-from wand.exceptions import ImageError, CorruptImageError, CoderError
 from wand.image import Image
 
 from config import config
@@ -118,10 +117,10 @@ class ImageSearchResult(object):
 
         # and a metadata file to know where it came from
         metafile = self.get_path('meta')
-        with open(metafile, 'w') as handle:
-            handle.write('url:\t' + self.image_url + '\n')
-            handle.write('source:\t' + self.source_url + '\n')
-            handle.write('query:\t' + self.text + '\n')
+        with open(metafile, 'w') as fp:
+            print('url:    %s' % self.image_url, file=fp)
+            print('source: %s' % self.source_url, file=fp)
+            print('query:  %s' % self.text, file=fp)
 
         # check the size of the image before loading it into memory
         if os.stat(filename).st_size > 25 * 1024 * 1024:
@@ -131,7 +130,7 @@ class ImageSearchResult(object):
         # an exception so that we try with the next result
         try:
             image = Image(filename=filename)
-        except (ImageError, CorruptImageError, CoderError):
+        except Exception:
             raise ImageSearchResultError('Not an image')
         else:
             image.destroy()
