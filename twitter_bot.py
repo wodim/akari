@@ -141,7 +141,10 @@ class TwitterBot(tweepy.streaming.StreamListener):
             utils.logger.exception('Failed to remove the status pointed by '
                                    'the "in reply to" field.')
             return
-        return True
+        else:
+            utils.logger.info('Deleted: %d "%s"', status_del.id,
+                                                  status_del.text)
+            return True
 
     def _print_status(self, status):
         utils.logger.info('%d - "%s" by %s via %s',
