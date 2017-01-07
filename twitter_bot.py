@@ -40,6 +40,14 @@ class TwitterBot(tweepy.streaming.StreamListener):
             # then return
             return
 
+        self._print_status(status)
+
+        delete_triggers = config.get('twitter', 'delete_triggers', 're_list')
+        if delete_triggers and any(x.search(text) for x in delete_triggers):
+            if self._self_delete(status):
+                return
+            # if removal is not successful, we will generate a caption.
+
         # apply a strict ratelimit to people with fewer than 25 followers
         rate_limit_slow = utils.ratelimit_hit('twitter', 'global_slow', 5, 60)
         if (status.author.followers_count < 25 and
@@ -56,7 +64,6 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # so we'll generate something for this guy...
         # this is in a function of its own with a "new thread" decorator
-        self._print_status(status)
         self._process(status, text)
 
     @utils.background
@@ -107,6 +114,34 @@ class TwitterBot(tweepy.streaming.StreamListener):
                 twitter.handle_exception(exc)
         except Exception:
             utils.logger.exception('Error posting.')
+
+    @utils.background
+    def _self_delete(self, status):
+        if not status.in_reply_to_status_id:
+            utils.logger.warning('Attempting to remove a status with no '
+                                 '"in reply to" field.')
+            return
+
+        try:
+            status_del = twitter.api.get_status(status.in_reply_to_status_id)
+        except tweepy.error.TweepError:
+            utils.logger.exception('Failed to get the status pointed by '
+                                   'the "in reply to" field.')
+            return
+
+        if not status_del.text.startswith('@%s ' % status.user.screen_name):
+            utils.logger.warning('The status pointed by the "in reply to" '
+                                 "wasn't in reply to a status made by the "
+                                 'user who requested the removal.')
+            return
+
+        try:
+            twitter.api.destroy_status(status_del.id)
+        except tweepy.error.TweepError:
+            utils.logger.exception('Failed to remove the status pointed by '
+                                   'the "in reply to" field.')
+            return
+        return True
 
     def _print_status(self, status):
         utils.logger.info('%d - "%s" by %s via %s',

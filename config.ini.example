@@ -43,6 +43,11 @@ cron_override =
 ; If there's a previous retweet, it'll be undone first.
 promo_tweet_id =
 
+; List of terms that will make the bot remove a requested caption. For that
+; caption to be removed, the user who requested the removal has to be the user
+; who requested the caption. These are regular expressions.
+delete_triggers = \b(delete?|remove) (th|d)is\b
+
 [telegram]
 ; You can talk to the BotFather on Telegram to create an account for the bot.
 ; Once you've created it, you'll receive a token, which is what you need to put
