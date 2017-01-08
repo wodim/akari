@@ -1,3 +1,4 @@
+import os
 import random
 
 import tweepy
@@ -83,8 +84,19 @@ class TwitterBot(tweepy.streaming.StreamListener):
             except tweepy.error.TweepError:
                 pass
 
+        # if the one-minute load avg is greater than load_avg_still, generate
+        # still captions
+        load_avg_still = config.get('twitter', 'load_avg_still', type=int)
+        load_avg = os.getloadavg()[0]
+        if load_avg_still and load_avg > load_avg_still:
+            utils.logger.warning('Load average too high! (%i > %i)',
+                                 load_avg, load_avg_still)
+            akari_type = 'still'
+        else:
+            akari_type = 'animation'
+
         try:
-            akari = Akari(text, type='animation', shuffle_results=True)
+            akari = Akari(text, type=akari_type, shuffle_results=True)
             text = akari.caption
             image = akari.filename
         except ImageSearchNoResultsError:
@@ -149,7 +161,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
         else:
             utils.logger.info('Deleted: %d "%s"', status_del.id,
-                                                  status_del.text)
+                              status_del.text)
             return True
 
     def _print_status(self, status):

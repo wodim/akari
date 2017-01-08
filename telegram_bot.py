@@ -112,7 +112,7 @@ class TelegramBot(telepot.aio.Bot):
 
             # first, search...
             try:
-                akari = Akari(rest, type='animation', shuffle_results=True)
+                akari = Akari(rest, type='still', shuffle_results=True)
             except ImageSearchNoResultsError:
                 await self.send_message(message, 'No results.',
                                         quote_msg_id=msg_id)
