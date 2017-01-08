@@ -33,6 +33,13 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # if you are not talking to me...
         if not status.text.startswith('@' + twitter.me.screen_name):
+            # every two mins, generate a caption for someone at random.
+            rl_random = utils.ratelimit_hit('twitter', 'random', 1, 120)
+            if rl_random['allowed']:
+                self._print_status(status)
+                utils.logger.warning('%d - Lucky of the draw!', status.id)
+                self._process(status, text)
+
             # store this status to score it later in akari_cron
             with open('pending.txt', 'a') as p_file:
                 print('%d %s' % (status.id, text), file=p_file)
@@ -118,8 +125,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
     @utils.background
     def _self_delete(self, status):
         if not status.in_reply_to_status_id:
-            utils.logger.warning('Attempting to remove a status with no '
-                                 '"in reply to" field.')
+            utils.logger.warning('This status has no "in reply to" field.')
             return
 
         try:
