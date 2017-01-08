@@ -39,7 +39,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
             if rl_random['allowed']:
                 self._print_status(status)
                 utils.logger.warning('%d - Lucky of the draw!', status.id)
-                self._process(status, text)
+                self._process(status, text, suppress_errors=True)
 
             # store this status to score it later in akari_cron
             with open('pending.txt', 'a') as p_file:
@@ -75,7 +75,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
         self._process(status, text)
 
     @utils.background
-    def _process(self, status, text):
+    def _process(self, status, text, suppress_errors=False):
         # follow the user if he's new. if he does not follow back, he'll
         # be unfollowed by followers.unfollow_my_unfollowers sometime later.
         if is_eligible(status.author):
@@ -100,6 +100,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
             text = akari.caption
             image = akari.filename
         except ImageSearchNoResultsError:
+            if suppress_errors:
+                return
             utils.logger.exception('No results')
             msgs = ('I found nothing.',
                     'No results.',
@@ -110,6 +112,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
         except KeyboardInterrupt:
             raise
         except Exception:
+            if suppress_errors:
+                return
             utils.logger.exception('Error composing the image')
             msgs = ("Can't hear ya...",
                     "Ooops, I'm a bit busy at the moment.",
