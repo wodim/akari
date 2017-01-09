@@ -43,6 +43,10 @@ cron_override =
 ; If there's a previous retweet, it'll be undone first.
 promo_tweet_id =
 
+; Every X minutes, a caption will be generated for the first person who tweets
+; anything.
+lucky_interval = 3
+
 ; List of terms that will make the bot remove a requested caption. For that
 ; caption to be removed, the user who requested the removal has to be the user
 ; who requested the caption. These are regular expressions.

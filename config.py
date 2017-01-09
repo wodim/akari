@@ -82,7 +82,9 @@ class Config(object):
             self.config.add_section(section)
         self.config.set(section, key, self._to_config_str(value))
 
-    def get(self, section, key, type=str):
+    def get(self, section, key, type=str, suppress_errors=False):
+        """suppress_errors makes this func return None instead of raising an
+            exception in case the section and/or key do not exist"""
         try:
             return self._cache_get(section, key)
         except ConfigCacheMissError:
@@ -100,6 +102,11 @@ class Config(object):
                 ret = self._get_bool(section, key)
             self._cache_set(section, key, ret)
             return ret
+        except KeyError:
+            if suppress_errors:
+                return None
+            else:
+                raise
 
 
 try:

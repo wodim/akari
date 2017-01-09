@@ -22,7 +22,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # if the sources whitelist is enabled, ignore those who aren't on it
-        whitelist = config.get('twitter', 'sources_whitelist', type=list)
+        whitelist = config.get('twitter', 'sources_whitelist', type=list,
+                               suppress_errors=True)
         if whitelist and status.source not in whitelist:
             return
 
@@ -34,12 +35,17 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # if you are not talking to me...
         if not status.text.startswith('@' + twitter.me.screen_name):
-            # every two mins, generate a caption for someone at random.
-            rl_random = utils.ratelimit_hit('twitter', 'random', 1, 120)
-            if rl_random['allowed']:
-                self._print_status(status)
-                utils.logger.warning('%d - Lucky of the draw!', status.id)
-                self._process(status, text, suppress_errors=True)
+            self.lucky_interval = config.get('twitter', 'lucky_interval',
+                                             type=int, suppress_errors=True)
+            self.lucky_interval *= 60
+            if self.lucky_interval:
+                #  generate a caption for someone at random.
+                rl_lucky = utils.ratelimit_hit('twitter', 'lucky',
+                                               1, self.lucky_interval)
+                if rl_lucky['allowed']:
+                    self._print_status(status)
+                    utils.logger.warning('%d - Lucky of the draw!', status.id)
+                    self._process(status, text, suppress_errors=True)
 
             # store this status to score it later in akari_cron
             with open('pending.txt', 'a') as p_file:
@@ -50,7 +56,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         self._print_status(status)
 
-        delete_triggers = config.get('twitter', 'delete_triggers', 're_list')
+        delete_triggers = config.get('twitter', 'delete_triggers',
+                                     type='re_list', suppress_errors=True)
         if delete_triggers and any(x.search(text) for x in delete_triggers):
             if self._self_delete(status):
                 return
@@ -86,7 +93,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # if the one-minute load avg is greater than load_avg_still, generate
         # still captions
-        load_avg_still = config.get('twitter', 'load_avg_still', type=int)
+        load_avg_still = config.get('twitter', 'load_avg_still', type=int,
+                                    suppress_errors=True)
         load_avg = os.getloadavg()[0]
         if load_avg_still and load_avg > load_avg_still:
             utils.logger.warning('Load average too high! (%i > %i)',
