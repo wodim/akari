@@ -29,12 +29,14 @@ class GoogleImageSearch(object):
         params = {'tbm': 'isch', 'q': text}
 
         try:
-            s = requests.session()
+            s = requests.Session()
             s.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
             headers = {'User-Agent': config.get('image_search', 'user_agent')}
             response = s.get(url, params=params, headers=headers, timeout=3)
         except (requests.exceptions.RequestException, socket.timeout):
             raise ImageSearchError('Error making an HTTP request')
+        finally:
+            s.close()
 
         if response.status_code != requests.codes.ok:
             raise ImageSearchError('Response code not ok (%d)' %
@@ -48,6 +50,8 @@ class GoogleImageSearch(object):
             msg = 'Could not decode response'
             utils.logger.exception(msg)
             raise ImageSearchError(msg)
+        finally:
+            soup.decompose()
 
         results = []
         for result_json in results_json:
@@ -94,10 +98,10 @@ class ImageSearchResult(object):
         try:
             utils.logger.info('Downloading image "%s" from "%s"',
                               self.image_url, self.source_url)
-            # fake the referrer
-            response = requests.get(self.image_url,
-                                    headers={'Referer': self.source_url},
-                                    timeout=5)
+            headers = {'Accept': '*/*',
+                       'User-Agent': config.get('image_search', 'user_agent'),
+                       'Referer': self.source_url}
+            response = requests.get(self.image_url, headers=headers, timeout=5)
         except (requests.exceptions.RequestException, socket.timeout):
             # if the download times out, try with the next result
             raise ImageSearchResultError('Timed out')
@@ -110,7 +114,7 @@ class ImageSearchResult(object):
         filename = self.get_path('original')
         utils.logger.info('Saving image to "%s"', filename)
         with open(filename, 'wb') as handle:
-            for block in response.iter_content(1048576):
+            for block in response.iter_content(1024 * 1024):
                 if not block:
                     break
                 handle.write(block)
