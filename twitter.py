@@ -49,13 +49,19 @@ class Twitter(object):
         if media:
             status = utils.ellipsis(status, self.MAX_STATUS_WITH_MEDIA_LENGTH)
             utils.logger.info('Posting "%s" with "%s"', status, media)
-            self.api.update_with_media(media, status=status, **kwargs)
+            status = self.api.update_with_media(media, status=status, **kwargs)
         else:
             status = utils.ellipsis(status, self.MAX_STATUS_LENGTH)
             utils.logger.info('Posting "%s"', status)
-            self.api.update_status(status, **kwargs)
+            status = self.api.update_status(status, **kwargs)
 
-        utils.logger.info('Status posted successfully!')
+        url = self.status_to_url(status.id, status.user.screen_name)
+        utils.logger.info('Status posted successfully: %s', url)
+
+    @staticmethod
+    def status_to_url(id, username='username'):
+        template = 'https://twitter.com/{username}/status/{id}'
+        return template.format(id=id, username=username)
 
     @staticmethod
     def extract_exception(exc):
