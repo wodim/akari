@@ -55,13 +55,13 @@ class Twitter(object):
             utils.logger.info('Posting "%s"', status)
             status = self.api.update_status(status, **kwargs)
 
-        url = self.status_to_url(status.id, status.user.screen_name)
+        url = self.status_to_url(status)
         utils.logger.info('Status posted successfully: %s', url)
 
     @staticmethod
-    def status_to_url(id, username='username'):
-        template = 'https://twitter.com/{username}/status/{id}'
-        return template.format(id=id, username=username)
+    def status_to_url(status):
+        template = 'https://twitter.com/{user}/status/{id}'
+        return template.format(id=status.id, user=status.user.screen_name)
 
     @staticmethod
     def extract_exception(exc):
