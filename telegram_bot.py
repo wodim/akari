@@ -11,12 +11,11 @@ import utils
 
 
 class TelegramBot(telepot.aio.Bot):
-    HELP_MESSAGE = ("Hey! I'm Akari Shoah.\n"
-                    'If you want an image, just tell me what do you want me '
-                    'to search for.\n'
-                    'You can also ask me to create GIFs for you on Twitter: '
-                    'https://twitter.com/akari_shoah')
-    HELP_MESSAGE_G = ("Hey! I'm Akari Shoah.\n"
+    HELP_MSG_PRIV = ("Hey! I'm %s.\n"
+                     'If you want an image, just tell me what do you want me '
+                     'to search for.\n')
+    HELP_MSG_TW = 'You can also ask me to create GIFs for you on Twitter: '
+    HELP_MSG_GROUP = ("Hey! I'm %s.\n"
                       'If you want an image, use the /akari command. For '
                       'example:\n/akari french fries')
     INVALID_CMD = ("I don't know what you mean by that. If you need help, "
@@ -35,11 +34,19 @@ class TelegramBot(telepot.aio.Bot):
     PUBLIC_CHATS = ('group', 'supergroup')
 
     username = None
+    help_msg_priv = None
+    help_msg_group = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._answerer = telepot.aio.helper.Answerer(self)
         self.username = config.get('telegram', 'username')
+        realname = config.get('telegram', 'realname')
+        tw_url = config.get('telegram', 'twitter_url', suppress_errors=True)
+        self.help_msg_priv = self.HELP_MSG_PRIV % realname
+        if tw_url:
+            self.help_msg_priv += self.HELP_MSG_TW + tw_url
+        self.help_msg_group = self.HELP_MSG_GROUP % realname
 
     async def on_chat_message(self, message):
         try:
@@ -75,7 +82,7 @@ class TelegramBot(telepot.aio.Bot):
                 if command not in akari_commands:
                     if chat_type in self.PRIVATE_CHATS:
                         if command in ('help', 'start'):
-                            msg = self.HELP_MESSAGE
+                            msg = self.help_msg_priv
                         else:
                             msg = self.INVALID_CMD
                         await self.send_message(message, msg, no_preview=True,
@@ -89,7 +96,7 @@ class TelegramBot(telepot.aio.Bot):
             # if the resulting message is empty...
             if not rest:
                 if chat_type in self.PUBLIC_CHATS:  # only show this in groups
-                    await self.send_message(message, self.HELP_MESSAGE_G,
+                    await self.send_message(message, self.help_msg_group,
                                             quote_msg_id=msg_id)
                 return
 
@@ -120,7 +127,8 @@ class TelegramBot(telepot.aio.Bot):
 
             # then, if successful, send the pic
             utils.logger.info('Sending %s to %s', akari.filename, longname)
-            await self.send_message(message, type='file',
+            type = 'file' if akari.filename.endswith('.gif') else 'image'
+            await self.send_message(message, type=type,
                                     filename=akari.filename,
                                     quote_msg_id=msg_id)
         except Exception:
