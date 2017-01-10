@@ -26,6 +26,9 @@ class Config(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        return self._save()
+
+    def _save(self):
         with open(self.filename, 'w') as fp:
             self.config.write(fp)
 
@@ -81,6 +84,7 @@ class Config(object):
         if not self.config.has_section(section):
             self.config.add_section(section)
         self.config.set(section, key, self._to_config_str(value))
+        self._save()
 
     def get(self, section, key, type=str, suppress_errors=False):
         """suppress_errors makes this func return None instead of raising an
