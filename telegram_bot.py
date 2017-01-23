@@ -11,11 +11,11 @@ import utils
 
 
 class TelegramBot(telepot.aio.Bot):
-    HELP_MSG_PRIV = ("Hey! I'm %s.\n"
+    HELP_MSG_PRIV = ("Hey! I'm Akari.\n"
                      'If you want an image, just tell me what do you want me '
                      'to search for.\n')
     HELP_MSG_TW = 'You can also ask me to create GIFs for you on Twitter: '
-    HELP_MSG_GROUP = ("Hey! I'm %s.\n"
+    HELP_MSG_GROUP = ("Hey! I'm Akari.\n"
                       'If you want an image, use the /akari command. For '
                       'example:\n/akari french fries')
     INVALID_CMD = ("I don't know what you mean by that. If you need help, "
@@ -33,20 +33,17 @@ class TelegramBot(telepot.aio.Bot):
     PRIVATE_CHATS = ('private',)
     PUBLIC_CHATS = ('group', 'supergroup')
 
-    username = None
     help_msg_priv = None
     help_msg_group = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._answerer = telepot.aio.helper.Answerer(self)
-        self.username = config.get('telegram', 'username')
-        realname = config.get('telegram', 'realname')
         tw_url = config.get('telegram', 'twitter_url', suppress_errors=True)
-        self.help_msg_priv = self.HELP_MSG_PRIV % realname
+        self.help_msg_priv = self.HELP_MSG_PRIV
         if tw_url:
             self.help_msg_priv += self.HELP_MSG_TW + tw_url
-        self.help_msg_group = self.HELP_MSG_GROUP % realname
+        self.help_msg_group = self.HELP_MSG_GROUP
 
     async def on_chat_message(self, message):
         try:
@@ -77,19 +74,12 @@ class TelegramBot(telepot.aio.Bot):
             # commands need special handling
             if message['text'].startswith('/'):
                 command, rest = self._get_command(message['text'])
-                akari_commands = ('akari', 'akari@' + self.username)
 
-                if command not in akari_commands:
-                    if chat_type in self.PRIVATE_CHATS:
-                        if command in ('help', 'start'):
-                            msg = self.help_msg_priv
-                        else:
-                            msg = self.INVALID_CMD
-                        await self.send_message(message, msg, no_preview=True,
-                                                quote_msg_id=msg_id)
-                        return
-                    elif chat_type in self.PUBLIC_CHATS:
-                        return  # unknown cmd, this was meant for another bot
+                if chat_type in self.PRIVATE_CHATS:
+                    await self.send_message(message, self.help_msg_priv,
+                                            no_preview=True,
+                                            quote_msg_id=msg_id)
+                    return
             else:
                 rest = message['text'].strip()
 
