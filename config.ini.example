@@ -66,6 +66,12 @@ token =
 ; of obtaining it; you can launch the bot, talk to it, and read the log.
 rate_limit_exemptions =
 
+; The user name of your bot.
+username =
+
+; The real name of your bot.
+realname = Akari Anschluss
+
 ; The Twitter URL of your bot, if you have any.
 twitter_url =
 
