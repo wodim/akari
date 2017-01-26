@@ -200,7 +200,7 @@ def akari_cron():
     # normally.
     try:
         cron_override = config.get('twitter', 'cron_override')
-        if akari_cron_override(cron_override):
+        if cron_override and akari_cron_override(cron_override):
             # remove it so it's not posted in loop
             config.set('twitter', 'cron_override', '')
             return
