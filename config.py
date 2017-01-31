@@ -92,25 +92,26 @@ class Config(object):
         try:
             return self._cache_get(section, key)
         except ConfigCacheMissError:
-            if type == int:
-                ret = self._to_int(self._get(section, key))
-            elif type == list:
-                ret = self._to_list(self._get(section, key))
-            elif type == 're_list':
-                ret = self._to_re_list(self._get(section, key))
-            elif type == 'int_list':
-                ret = self._to_int_list(self._get(section, key))
-            elif type == str:
-                ret = self._to_str(self._get(section, key))
-            elif type == bool:
-                ret = self._get_bool(section, key)
-            self._cache_set(section, key, ret)
-            return ret
-        except KeyError:
-            if suppress_errors:
-                return None
-            else:
-                raise
+            try:
+                if type == int:
+                    ret = self._to_int(self._get(section, key))
+                elif type == list:
+                    ret = self._to_list(self._get(section, key))
+                elif type == 're_list':
+                    ret = self._to_re_list(self._get(section, key))
+                elif type == 'int_list':
+                    ret = self._to_int_list(self._get(section, key))
+                elif type == str:
+                    ret = self._to_str(self._get(section, key))
+                elif type == bool:
+                    ret = self._get_bool(section, key)
+                self._cache_set(section, key, ret)
+                return ret
+            except KeyError:
+                if suppress_errors:
+                    return None
+                else:
+                    raise
 
 
 try:
