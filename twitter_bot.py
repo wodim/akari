@@ -29,6 +29,29 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
 
+        # if you are not talking to me...
+        if not status.text.startswith('@' + twitter.me.screen_name):
+            self.lucky_interval = config.get('twitter', 'lucky_interval',
+                                             type=int, suppress_errors=True)
+            if text:
+                if self.lucky_interval:
+                    self.lucky_interval *= 60
+                    # generate a caption for someone at random.
+                    rl_lucky = utils.ratelimit_hit('twitter', 'lucky',
+                                                   1, self.lucky_interval)
+                    if rl_lucky['allowed']:
+                        self._print_status(status)
+                        utils.logger.warning('%d - Lucky of the draw!',
+                                             status.id)
+                        self._process(status, text, suppress_errors=True)
+
+                # store this status to score it later in akari_cron
+                with open('pending.txt', 'a') as p_file:
+                    print('%d %s' % (status.id, text), file=p_file)
+
+            # then return
+            return
+
         # see if there's an image (and if that's allowed)
         user_images = config.get('twitter', 'user_images', type=bool,
                                  suppress_errors=True)
@@ -38,29 +61,9 @@ class TwitterBot(tweepy.streaming.StreamListener):
             except KeyError:
                 image_url = None
 
-        # if after being cleaned the status turns out to be empty, return
-        if text and not image_url:
-            return
-
-        # if you are not talking to me...
-        if text and not status.text.startswith('@' + twitter.me.screen_name):
-            self.lucky_interval = config.get('twitter', 'lucky_interval',
-                                             type=int, suppress_errors=True)
-            if self.lucky_interval:
-                self.lucky_interval *= 60
-                # generate a caption for someone at random.
-                rl_lucky = utils.ratelimit_hit('twitter', 'lucky',
-                                               1, self.lucky_interval)
-                if rl_lucky['allowed']:
-                    self._print_status(status)
-                    utils.logger.warning('%d - Lucky of the draw!', status.id)
-                    self._process(status, text, suppress_errors=True)
-
-            # store this status to score it later in akari_cron
-            with open('pending.txt', 'a') as p_file:
-                print('%d %s' % (status.id, text), file=p_file)
-
-            # then return
+        # if after being cleaned up the status turns out to be empty and
+        # there's no image, return
+        if not text and (user_images and not image_url):
             return
 
         self._print_status(status)
