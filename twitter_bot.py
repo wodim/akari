@@ -29,8 +29,17 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
 
+        # see if there's an image (and if that's allowed)
+        user_images = config.get('twitter', 'user_images', type=bool,
+                                 suppress_errors=True)
+        if user_images:
+            try:
+                image_url = status.entities['media'][0]['media_url'] + ':orig'
+            except KeyError:
+                image_url = None
+
         # if after being cleaned the status turns out to be empty, return
-        if text == '':
+        if text == '' and not image_url:
             return
 
         # if you are not talking to me...
@@ -79,10 +88,10 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # so we'll generate something for this guy...
         # this is in a function of its own with a "new thread" decorator
-        self._process(status, text)
+        self._process(status, text, image_url)
 
     @utils.background
-    def _process(self, status, text, suppress_errors=False):
+    def _process(self, status, text, image_url=None, suppress_errors=False):
         # follow the user if he's new. if he does not follow back, he'll
         # be unfollowed by followers.unfollow_my_unfollowers sometime later.
         if is_eligible(status.author):
@@ -102,15 +111,6 @@ class TwitterBot(tweepy.streaming.StreamListener):
             akari_type = 'still'
         else:
             akari_type = 'animation'
-
-        # see if there's an image (and if that's allowed)
-        user_images = config.get('twitter', 'user_images', type=bool,
-                                 suppress_errors=True)
-        if user_images:
-            try:
-                image_url = status.entities['media'][0]['media_url'] + ':orig'
-            except KeyError:
-                image_url = None
 
         try:
             akari = Akari(text, type=akari_type, shuffle_results=True,

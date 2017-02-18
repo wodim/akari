@@ -109,11 +109,14 @@ class Akari(object):
         bg_img.transform(resize='{}x{}^'.format(width, height))
         bg_img.crop(width=width, height=height, gravity='center')
 
-        # generate the drawing to be applied to each frame
-        if config.get('akari', 'caption_type') == 'seinfeld':
-            caption, drawing = self._caption_seinfeld()
+        if self.text:
+            # generate the drawing to be applied to each frame
+            if config.get('akari', 'caption_type') == 'seinfeld':
+                caption, drawing = self._caption_seinfeld()
+            else:
+                caption, drawing = self._caption_akari()
         else:
-            caption, drawing = self._caption_akari()
+            caption, drawing = '', None
 
         result = Image()  # this will be the resulting image
         for akari_frame in akari_frames:
@@ -123,8 +126,9 @@ class Akari(object):
             # put akari on top of it
             this_frame.composite(akari_frame, left=0, top=0)
 
-            # draw the caption on this frame
-            drawing(this_frame)
+            if drawing:
+                # draw the caption on this frame
+                drawing(this_frame)
 
             if len(akari_frames) == 1:
                 # we are done already
@@ -142,7 +146,8 @@ class Akari(object):
         result.save(filename=filename)
 
         # destroy everything
-        drawing.destroy()
+        if drawing:
+            drawing.destroy()
         for frame in result.sequence:
             frame.destroy()
         result.close()
