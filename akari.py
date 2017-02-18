@@ -11,7 +11,7 @@ from wand.image import Image
 
 from cache import cache
 from config import config
-from image_search import ImageSearch, ImageSearchResultError
+from image_search import ImageSearch, ImageSearchResult, ImageSearchResultError
 import utils
 
 
@@ -29,16 +29,20 @@ class AkariWandIsRetardedError(Exception):
 
 class Akari(object):
     def __init__(self, text, type='still', shuffle_results=False,
-                 caption=None):
+                 caption=None, image_url=None):
         self.text = text
         self.caption = caption if caption else self.text
         if type not in ('still', 'animation'):
             raise ValueError('Incorrect Akari type "%s"' % type)
         self.type = type
 
-        results = ImageSearch(self.text).results[:5]
-        if shuffle_results:
-            random.shuffle(results)
+        if image_url:
+            result = ImageSearchResult(image_url, 'overriden', 'overriden')
+            results = [result]
+        else:
+            results = ImageSearch(self.text).results[:5]
+            if shuffle_results:
+                random.shuffle(results)
 
         for result in results:
             # first, download the result. if it fails, continue for the next

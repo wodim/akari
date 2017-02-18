@@ -52,6 +52,10 @@ lucky_interval = 3
 ; who requested the caption. These are regular expressions.
 delete_triggers = \b(delete?|remove) (th|d)is\b
 
+; If this is on, users can provide images in tweets and those will be used,
+; instead of a regular Google search, to generate GIFs.
+user_images = yes
+
 [telegram]
 ; You can talk to the BotFather on Telegram to create an account for the bot.
 ; Once you've created it, you'll receive a token, which is what you need to put

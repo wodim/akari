@@ -103,8 +103,18 @@ class TwitterBot(tweepy.streaming.StreamListener):
         else:
             akari_type = 'animation'
 
+        # see if there's an image (and if that's allowed)
+        user_images = config.get('twitter', 'user_images', type=bool,
+                                 suppress_errors=True)
+        if user_images:
+            try:
+                image_url = status.entities['media'][0]['media_url'] + ':orig'
+            except KeyError:
+                image_url = None
+
         try:
-            akari = Akari(text, type=akari_type, shuffle_results=True)
+            akari = Akari(text, type=akari_type, shuffle_results=True,
+                          image_url=image_url)
             text = akari.caption
             image = akari.filename
         except ImageSearchNoResultsError:
