@@ -43,10 +43,10 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # if you are not talking to me...
-        if not status.text.startswith('@' + twitter.me.screen_name):
+        if text and not status.text.startswith('@' + twitter.me.screen_name):
             self.lucky_interval = config.get('twitter', 'lucky_interval',
                                              type=int, suppress_errors=True)
-            if text and self.lucky_interval:
+            if self.lucky_interval:
                 self.lucky_interval *= 60
                 # generate a caption for someone at random.
                 rl_lucky = utils.ratelimit_hit('twitter', 'lucky',
