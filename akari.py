@@ -41,8 +41,15 @@ class Akari(object):
             results = [result]
         else:
             results = ImageSearch(self.text).results[:5]
-            if shuffle_results:
+            try:
+                limit_results = config.get('akari', 'limit_results', type=int)
+                results = results[:limit_results]
+                # results are always shuffled if # of results is capped
                 random.shuffle(results)
+            except KeyError:
+                if shuffle_results:
+                    random.shuffle(results)
+                pass
 
         for result in results:
             # first, download the result. if it fails, continue for the next
@@ -83,7 +90,7 @@ class Akari(object):
             if os.path.isdir(masks):
                 masks = sorted([masks + x for x in os.listdir(masks)])
             else:
-                masks = [path]
+                masks = [masks]
 
             # generate the list of masks
             if self.type == 'still':

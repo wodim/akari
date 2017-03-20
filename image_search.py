@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import re
 import socket
 import urllib
@@ -65,7 +66,11 @@ class ImageSearch(object):
     def __init__(self, text):
         self.results = []
 
-        results = GoogleImageSearch(text).results
+        try:
+            override = config.get('image_search', 'override', type=list)
+            results = GoogleImageSearch(random.choice(override)).results
+        except KeyError:
+            results = GoogleImageSearch(text).results
 
         if len(results) == 0:
             raise ImageSearchNoResultsError('No results found for "%s"' % text)
