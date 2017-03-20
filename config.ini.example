@@ -1,7 +1,6 @@
 [akari]
 ; You should generally not touch these unless you're creating your own masks.
-animation_frames = assets/akari/
-still_frame = assets/akari/frame-8.png
+akari_frames = assets/akari/
 caption_type = akari
 
 [twitter]

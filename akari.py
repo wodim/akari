@@ -79,12 +79,16 @@ class Akari(object):
         akari_frames = cache.get('akari_frames:%s' % self.type)
 
         if not akari_frames:  # cache miss
+            masks = config.get('akari', 'akari_frames')
+            if os.path.isdir(masks):
+                masks = sorted([masks + x for x in os.listdir(masks)])
+            else:
+                masks = [path]
+
             # generate the list of masks
             if self.type == 'still':
-                masks = (config.get('akari', 'still_frame'),)
+                masks = masks[0]
             elif self.type == 'animation':
-                path = config.get('akari', 'animation_frames')
-                masks = sorted([path + x for x in os.listdir(path)])
                 # if there's only one frame here, it's not an animation
                 if len(masks) == 1:
                     self.type = 'still'
