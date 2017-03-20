@@ -1,6 +1,6 @@
 [akari]
 ; You should generally not touch these unless you're creating your own masks.
-akari_frames = assets/akari/
+frames = assets/akari/
 caption_type = akari
 
 ; Only use the X most relevant results in all image searches.

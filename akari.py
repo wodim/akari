@@ -86,7 +86,7 @@ class Akari(object):
         akari_frames = cache.get('akari_frames:%s' % self.type)
 
         if not akari_frames:  # cache miss
-            masks = config.get('akari', 'akari_frames')
+            masks = config.get('akari', 'frames')
             if os.path.isdir(masks):
                 masks = sorted([masks + x for x in os.listdir(masks)])
             else:
