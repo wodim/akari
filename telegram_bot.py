@@ -153,7 +153,8 @@ class TelegramBot(telepot.aio.Bot):
         elif type == 'image':
             if not filename:
                 raise ValueError('You need a file parameter to send an image')
-            caption = utils.ellipsis(caption, 200)
+            if caption:
+                caption = utils.ellipsis(caption, 200)
             with open(filename, 'rb') as f:
                 await self.sendPhoto(message['chat']['id'], f, caption=caption,
                                      reply_to_message_id=quote_msg_id)
