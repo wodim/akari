@@ -42,10 +42,12 @@ class TelegramBot(telepot.aio.Bot):
         self._answerer = telepot.aio.helper.Answerer(self)
         self.username = config.get('telegram', 'username')
         realname = config.get('telegram', 'realname')
-        tw_url = config.get('telegram', 'twitter_url', suppress_errors=True)
         self.help_msg_priv = self.HELP_MSG_PRIV % realname
-        if tw_url:
+        try:
+            tw_url = config.get('telegram', 'twitter_url')
             self.help_msg_priv += self.HELP_MSG_TW + tw_url
+        except KeyError:
+            pass
         self.help_msg_group = self.HELP_MSG_GROUP % realname
 
     async def on_chat_message(self, message):

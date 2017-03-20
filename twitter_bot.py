@@ -22,28 +22,31 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # if the sources whitelist is enabled, ignore those who aren't on it
-        whitelist = config.get('twitter', 'sources_whitelist', type=list,
-                               suppress_errors=True)
-        if whitelist and status.source not in whitelist:
-            return
+        try:
+            whitelist = config.get('twitter', 'sources_whitelist', type=list)
+            if status.source not in whitelist:
+                return
+        except KeyError:
+            pass
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
 
         # if you are not talking to me...
         if not status.text.startswith('@' + twitter.me.screen_name):
-            self.lucky_interval = config.get('twitter', 'lucky_interval',
-                                             type=int, suppress_errors=True)
             if text:
-                if self.lucky_interval:
-                    self.lucky_interval *= 60
+                try:
+                    lucky_interval = config.get('twitter', 'lucky_interval',
+                                                type=int) * 60
                     # generate a caption for someone at random.
                     rl_lucky = utils.ratelimit_hit('twitter', 'lucky',
-                                                   1, self.lucky_interval)
+                                                   1, lucky_interval)
                     if rl_lucky['allowed']:
                         self._print_status(status)
                         utils.logger.warning('%d - Lucky of the draw!',
                                              status.id)
                         self._process(status, text, suppress_errors=True)
+                except KeyError:
+                    pass
 
                 # store this status to score it later in akari_cron
                 with open('pending.txt', 'a') as p_file:
@@ -53,27 +56,28 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # see if there's an image (and if that's allowed)
-        user_images = config.get('twitter', 'user_images', type=bool,
-                                 suppress_errors=True)
-        if user_images:
-            try:
+        image_url = None
+        try:
+            if config.get('twitter', 'user_images', type=bool):
                 image_url = status.entities['media'][0]['media_url'] + ':orig'
-            except KeyError:
-                image_url = None
+        except KeyError:  # both for config.get and the status.entities lookup
+            pass
 
         # if after being cleaned up the status turns out to be empty and
         # there's no image, return
-        if not text and (user_images and not image_url):
+        if not text and not image_url:
             return
 
         self._print_status(status)
 
-        delete_triggers = config.get('twitter', 'delete_triggers',
-                                     type='re_list', suppress_errors=True)
-        if delete_triggers and any(x.search(text) for x in delete_triggers):
-            if self._self_delete(status):
-                return
+        try:
+            triggers = config.get('twitter', 'delete_triggers', type='re_list')
+            if any(x.search(text) for x in triggers):
+                if self._self_delete(status):
+                    return
             # if removal is not successful, we will generate a caption.
+        except KeyError:
+            pass
 
         # apply a strict ratelimit to people with fewer than 25 followers
         rate_limit_slow = utils.ratelimit_hit('twitter', 'global_slow', 5, 60)
@@ -105,15 +109,17 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         # if the one-minute load avg is greater than load_avg_still, generate
         # still captions
-        load_avg_still = config.get('twitter', 'load_avg_still', type=int,
-                                    suppress_errors=True)
-        load_avg = os.getloadavg()[0]
-        if load_avg_still and load_avg > load_avg_still:
-            utils.logger.warning('Load average too high! (%i > %i)',
-                                 load_avg, load_avg_still)
-            akari_type = 'still'
-        else:
-            akari_type = 'animation'
+        try:
+            load_avg_still = config.get('twitter', 'load_avg_still', type=int)
+            load_avg = os.getloadavg()[0]
+            if load_avg_still and load_avg > load_avg_still:
+                utils.logger.warning('Load average too high! (%i > %i)',
+                                     load_avg, load_avg_still)
+                akari_type = 'still'
+            else:
+                akari_type = 'animation'
+        except KeyError:
+            pass
 
         try:
             akari = Akari(text, type=akari_type, shuffle_results=True,
