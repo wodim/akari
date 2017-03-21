@@ -44,11 +44,11 @@ class Akari(object):
             try:
                 limit_results = config.get('akari', 'limit_results', type=int)
                 results = results[:limit_results]
-                # results are always shuffled if # of results is capped
-                random.shuffle(results)
-            except KeyError:
                 if shuffle_results:
                     random.shuffle(results)
+            except KeyError:
+                # results are always shuffled if # of results is uncapped
+                random.shuffle(results)
                 pass
 
         for result in results:
