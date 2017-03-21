@@ -92,13 +92,16 @@ class Akari(object):
             else:
                 masks = [masks]
 
-            # generate the list of masks
-            if self.type == 'still':
-                masks = masks[0]
-            elif self.type == 'animation':
-                # if there's only one frame here, it's not an animation
-                if len(masks) == 1:
-                    self.type = 'still'
+            # if we were asked to generate an animation but there's only one
+            # mask, then we're generating a still image
+            if self.type == 'animation' and len(masks) == 1:
+                self.type = 'still'
+
+            # if we were asked to generate a still image and there are several
+            # masks, use only the first one
+            if self.type == 'still' and len(masks) > 1:
+                masks = [masks[0]]
+            print("list: " + str(masks))
             akari_frames = [Image(filename=x) for x in masks]
 
             # cache all of this
