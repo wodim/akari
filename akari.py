@@ -40,7 +40,7 @@ class Akari(object):
             result = ImageSearchResult(image_url, 'overriden', 'overriden')
             results = [result]
         else:
-            results = ImageSearch(self.text).results[:5]
+            results = ImageSearch(self.text).results
             try:
                 limit_results = config.get('akari', 'limit_results', type=int)
                 results = results[:limit_results]
