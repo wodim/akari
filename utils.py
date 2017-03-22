@@ -2,6 +2,7 @@ import functools
 import html
 import logging
 import re
+import textwrap
 import threading
 import time
 
@@ -122,10 +123,7 @@ def clean(text, replies=False, hashtags=False, rts=False, urls=False):
 
 
 def ellipsis(text, max_length):
-    if len(text) > max_length:
-        return text[:max_length - 1] + '…'
-    else:
-        return text
+    return textwrap.shorten(text, width=max_length, placeholder='…')
 
 
 def decay(time_, max_time, coeff):
