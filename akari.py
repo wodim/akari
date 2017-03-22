@@ -101,7 +101,7 @@ class Akari(object):
             # masks, use only the first one
             if self.type == 'still' and len(masks) > 1:
                 masks = [masks[0]]
-            print("list: " + str(masks))
+
             akari_frames = [Image(filename=x) for x in masks]
 
             # cache all of this
@@ -181,25 +181,34 @@ class Akari(object):
         self.filename = filename
         self.caption = caption
 
+    # word of caution: 2nd parameter of textwrap.fill previously depended on
+    # the font size, which in turn depended on image width. that was wrong;
+    # the amount of letters that fit in every row *remains constant* no matter
+    # what the font size or the image size is because the relative width of
+    # every character remains constant, since the size of text changes lineally
+    # depending on the image width.
+
     def _caption_akari(self):
         caption = 'わぁい{0} あかり{0}大好き'.format(self.text)
         drawing = Drawing()
         drawing.font = 'assets/fonts/rounded-mgenplus-1c-bold.ttf'
         drawing.font_size = self.width / 15
+        text = fill(caption, 25)
         drawing.gravity = 'south'
         drawing.text_interline_spacing = drawing.font_size / -5
+        offset = max(self.width / 400, 2)
         # first the shadow
-        drawing.translate(3, -3)
+        drawing.translate(offset, -offset)
         drawing.fill_color = Color('#000')
         drawing.fill_opacity = 0.5
-        drawing.text(0, 0, fill(caption, drawing.font_size // 2))
+        drawing.text(0, 0, text)
         # then the text
-        drawing.translate(-3, 3)
+        drawing.translate(-offset, offset)
         drawing.fill_color = Color('#fff')
         drawing.fill_opacity = 1
         drawing.stroke_color = Color('#000')
-        drawing.stroke_width = 1.5
-        drawing.text(0, 0, fill(caption, drawing.font_size // 2))
+        drawing.stroke_width = max(self.width / 600, 1)
+        drawing.text(0, 0, text)
         return caption, drawing
 
     def _caption_seinfeld(self):
@@ -207,14 +216,17 @@ class Akari(object):
         drawing = Drawing()
         drawing.font = 'assets/fonts/NimbusSanL-RegIta.otf'
         drawing.font_size = self.width / 14
+        text = fill(caption, 25)
         drawing.fill_color = Color('#000')
-        drawing.translate(10, 100)
-        for _ in range(8):
+        drawing.translate(10, self.height / 12)
+        # the number of shadows depends on image width, with a min of 1
+        shadows = max(int(self.width / 150), 1)
+        for _ in range(shadows):
             drawing.translate(-1, 1)
             drawing.gravity = 'south'
-            drawing.text(0, 0, fill(caption, drawing.font_size // 3))
+            drawing.text(0, 0, text)
         drawing.fill_color = Color('#fff')
-        drawing.text(0, 0, fill(caption, drawing.font_size // 3))
+        drawing.text(0, 0, text)
         return caption, drawing
 
 
