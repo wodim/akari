@@ -107,7 +107,7 @@ class Akari(object):
             # cache all of this
             cache.set('akari_frames:%s' % self.type, akari_frames)
 
-        width, height = akari_frames[0].width, akari_frames[0].height
+        self.width, self.height = akari_frames[0].width, akari_frames[0].height
 
         # now, get the background image
         filename = image.get_path('original')
@@ -120,8 +120,8 @@ class Akari(object):
         # remove the alpha channel, if any
         bg_img.alpha_channel = False
         # resize it
-        bg_img.transform(resize='{}x{}^'.format(width, height))
-        bg_img.crop(width=width, height=height, gravity='center')
+        bg_img.transform(resize='{}x{}^'.format(self.width, self.height))
+        bg_img.crop(width=self.width, height=self.height, gravity='center')
 
         if self.text:
             # generate the drawing to be applied to each frame
@@ -185,36 +185,36 @@ class Akari(object):
         caption = 'わぁい{0} あかり{0}大好き'.format(self.text)
         drawing = Drawing()
         drawing.font = 'assets/fonts/rounded-mgenplus-1c-bold.ttf'
-        drawing.font_size = 50
+        drawing.font_size = self.width / 15
         drawing.gravity = 'south'
         drawing.text_interline_spacing = drawing.font_size / -5
         # first the shadow
         drawing.translate(3, -3)
         drawing.fill_color = Color('#000')
         drawing.fill_opacity = 0.5
-        drawing.text(0, 0, fill(caption, 24))
+        drawing.text(0, 0, fill(caption, drawing.font_size // 2))
         # then the text
         drawing.translate(-3, 3)
         drawing.fill_color = Color('#fff')
         drawing.fill_opacity = 1
         drawing.stroke_color = Color('#000')
         drawing.stroke_width = 1.5
-        drawing.text(0, 0, fill(caption, 24))
+        drawing.text(0, 0, fill(caption, drawing.font_size // 2))
         return caption, drawing
 
     def _caption_seinfeld(self):
         caption = self.text
         drawing = Drawing()
         drawing.font = 'assets/fonts/NimbusSanL-RegIta.otf'
-        drawing.font_size = 90
+        drawing.font_size = self.width / 14
         drawing.fill_color = Color('#000')
         drawing.translate(10, 100)
         for _ in range(8):
             drawing.translate(-1, 1)
             drawing.gravity = 'south'
-            drawing.text(0, 0, fill(caption, int(drawing.font_size // 3)))
+            drawing.text(0, 0, fill(caption, drawing.font_size // 3))
         drawing.fill_color = Color('#fff')
-        drawing.text(0, 0, fill(caption, int(drawing.font_size // 3)))
+        drawing.text(0, 0, fill(caption, drawing.font_size // 3))
         return caption, drawing
 
 
