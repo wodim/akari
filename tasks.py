@@ -39,6 +39,18 @@ def unfollow_my_unfollowers():
                     utils.logger.exception('Error unfollowing.')
 
 
+def unfollow_spammers():
+    for page in tweepy.Cursor(twitter.api.friends, count=200).pages():
+        for user in page:
+            if not is_eligible(user):
+                utils.logger.info('Unfollowing @%s (%d)',
+                                  user.screen_name, user.id)
+                try:
+                    twitter.api.destroy_friendship(user.id)
+                except tweepy.error.TweepError:
+                    utils.logger.exception('Error unfollowing.')
+
+
 def is_eligible(user):
     """checks if a user is eligible to be followed."""
     if user.friends_count > 5000:
