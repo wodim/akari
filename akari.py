@@ -49,7 +49,6 @@ class Akari(object):
             except KeyError:
                 # results are always shuffled if # of results is uncapped
                 random.shuffle(results)
-                pass
 
         for result in results:
             # first, download the result. if it fails, continue for the next
@@ -205,7 +204,7 @@ class Akari(object):
         # then the text
         drawing.translate(-offset, offset)
         drawing.fill_color = Color('#fff')
-        drawing.fill_opacity = 1
+        drawing.fill_opacity = 1.0
         drawing.stroke_color = Color('#000')
         drawing.stroke_width = max(self.width / 600, 1)
         drawing.text(0, 0, text)
