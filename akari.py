@@ -192,7 +192,7 @@ class Akari(object):
         drawing = Drawing()
         drawing.font = 'assets/fonts/rounded-mgenplus-1c-bold.ttf'
         drawing.font_size = self.width / 15
-        text = fill(caption, 25)
+        text = fill(caption, 23)
         drawing.gravity = 'south'
         drawing.text_interline_spacing = drawing.font_size / -5
         offset = max(self.width / 400, 2)
