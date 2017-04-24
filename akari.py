@@ -126,6 +126,8 @@ class Akari(object):
             # generate the drawing to be applied to each frame
             if config.get('akari', 'caption_type') == 'seinfeld':
                 caption, drawing = self._caption_seinfeld()
+            elif config.get('akari', 'caption_type') == 'sanandreas':
+                caption, drawing = self._caption_sanandreas()
             else:
                 caption, drawing = self._caption_akari()
         else:
@@ -156,6 +158,7 @@ class Akari(object):
 
         # save the result
         filename = image.get_path(self.type)
+        result.compression_quality = 100
         result.save(filename=filename)
 
         # destroy everything
@@ -225,6 +228,23 @@ class Akari(object):
             drawing.gravity = 'south'
             drawing.text(0, 0, text)
         drawing.fill_color = Color('#fff')
+        drawing.text(0, 0, text)
+        return caption, drawing
+
+    def _caption_sanandreas(self):
+        caption = self.text
+        drawing = Drawing()
+        drawing.font = 'assets/fonts/TwCenMTStd-ExtraBold.otf'
+        drawing.font_size = self.width / 30
+        drawing.text_interline_spacing = drawing.font_size / 5
+        drawing.fill_opacity = 0.8
+        drawing.gravity = 'south'
+        text = fill(caption, 50)
+        drawing.fill_color = Color('#000')
+        drawing.translate(5, self.height / 15)
+        drawing.text(0, 0, text)
+        drawing.translate(-5, 5)
+        drawing.fill_color = Color('#eee')
         drawing.text(0, 0, text)
         return caption, drawing
 
