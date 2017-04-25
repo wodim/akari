@@ -235,15 +235,15 @@ class Akari(object):
         caption = self.text
         drawing = Drawing()
         drawing.font = 'assets/fonts/TwCenMTStd-ExtraBold.otf'
-        drawing.font_size = self.width / 30
+        drawing.font_size = self.width / 20
         drawing.text_interline_spacing = drawing.font_size / 5
         drawing.fill_opacity = 0.8
         drawing.gravity = 'south'
-        text = fill(caption, 50)
+        text = fill(caption, 30)
         drawing.fill_color = Color('#000')
-        drawing.translate(5, self.height / 15)
+        drawing.translate(7, self.height / 15)
         drawing.text(0, 0, text)
-        drawing.translate(-5, 5)
+        drawing.translate(-7, 7)
         drawing.fill_color = Color('#eee')
         drawing.text(0, 0, text)
         return caption, drawing
