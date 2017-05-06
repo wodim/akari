@@ -1,14 +1,16 @@
 import functools
+import hashlib
 import html
 import logging
+import pickle
 import re
 import textwrap
 import threading
-import time
 
+import redis
 import requests
 
-from config import config, Config
+from config import config
 
 
 class Logger(object):
@@ -30,42 +32,45 @@ class Logger(object):
 logger = Logger().get_logger()
 
 
+class DB(object):
+    server_available = False
+
+    def __init__(self):
+        self.server = redis.Redis(socket_connect_timeout=1)
+        try:
+            self.server.ping()
+            logger.warning('Redis initialised.')
+            self.server_available = True
+        except Exception as e:
+            logger.warning('Redis server unavailable: ' + str(e))
+
+
+db = DB()
+
+
 # allowed: whether the action was accepted
 # left: how many requests are left until next reset
 # reset: how many seconds until the rate limit is reset
-def ratelimit_hit(prefix, user, max_=50, ttl=60 * 10):
-    def ret(allowed, left, reset, unavailable=False):
-        return dict(allowed=allowed, left=left, reset=reset,
-                    unavailable=unavailable)
+def ratelimit_hit(prefix, user, max=50, ttl=60 * 10):
+    def r(x, y, z): return {'allowed': x, 'left': y, 'reset': z}
+    # if the server is not available, let it through
+    if not db.server_available:
+        return r(True, 1, 0)
 
     key = str(prefix) + ':' + str(user)
-    current_ts = int(time.time())
-
-    try:
-        with Config('rate_limits.ini', cached=False) as rl_cf:
-            try:
-                count = rl_cf.get(key, 'count', int)
-                ts = rl_cf.get(key, 'ts', int)
-                if ts + ttl > current_ts:  # this rl is still in effect
-                    left = ts + ttl - current_ts
-                    if count >= max_:  # don't allow this request
-                        return ret(False, 0, left)
-                    else:  # allow this request and sum it
-                        rl_cf.set(key, 'count', count + 1)
-                        return ret(True, max_ - count + 1, left)
-                else:  # this rl has expired already, renew it
-                    rl_cf.set(key, 'count', 1)
-                    rl_cf.set(key, 'ts', current_ts)
-                    return ret(True, max_ - 1, ttl)
-            except KeyError:
-                # new rl
-                rl_cf.set(key, 'count', 1)
-                rl_cf.set(key, 'ts', current_ts)
-                return ret(True, max_ - 1, ttl)
-    except OSError:
-        # file is locked or something, so just allow it
-        logger.exception("Couldn't open ratelimit file!")
-        return ret(True, 1, 0, unavailable=True)
+    value = db.server.get(key)
+    if not value:
+        # if key does not exist...
+        db.server.set(key, 1)
+        db.server.expire(key, ttl)
+        return r(True, max - 1, ttl)
+    else:
+        current_ttl = db.server.ttl(key)
+        if int(value) >= max:
+            return r(False, 0, current_ttl)
+        else:
+            db.server.incr(key)
+            return r(True, max - 1 - int(value), current_ttl)
 
 
 def timedelta(time_):
@@ -152,3 +157,56 @@ def send_email(subject, text):
             'to': [config.get('mail', 'to')],
             'subject': subject, 'text': text}
     return requests.post(url, auth=auth, data=data)
+
+
+# from reddit
+def _make_hashable(s):
+    if isinstance(s, str):
+        return s
+    elif isinstance(s, (tuple, list)):
+        return ','.join(_make_hashable(x) for x in s)
+    elif isinstance(s, dict):
+        return ','.join('%s:%s' % (_make_hashable(k), _make_hashable(v))
+                        for (k, v) in sorted(s.items()))
+    else:
+        return s
+
+
+# from reddit
+def make_key_id(*args, **kwargs):
+    h = hashlib.md5()
+    h.update(_make_hashable(args).encode('utf-8'))
+    h.update(_make_hashable(kwargs).encode('utf-8'))
+    return h.hexdigest()
+
+
+def memoize(name, timeout=30):
+    def memoize_fn(func):
+        @functools.wraps(func)
+        def new_fn(*args, **kwargs):
+            key = 'memo:%s:%s' % (name, make_key_id(*args, **kwargs))
+
+            res = db.server.get(key)
+
+            if res:
+                try:
+                    res = pickle.loads(res)
+                    logger.info('Returning object from cache: %s', key)
+                except TypeError:
+                    # this key got fucked up. remove it and pretend we didn't
+                    # see it
+                    db.server.delete(key)
+                    res = None
+                    logger.warning('Destroying corrupt object in cache: %s',
+                                   key)
+
+            if not res:
+                # not cached, we should calculate it.
+                res = func(*args, **kwargs)
+                db.server.set(key, pickle.dumps(res))
+                # ttl is set here so it cannot be overriden
+                db.server.expire(key, timeout)
+
+            return res
+        return new_fn
+    return memoize_fn

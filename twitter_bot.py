@@ -10,6 +10,11 @@ from image_search import ImageSearchNoResultsError
 from twitter import twitter
 import utils
 
+try:
+    lucky_interval = config.get('twitter', 'lucky_interval', type=int) * 60
+except KeyError:
+    lucky_interval = None
+
 
 class TwitterBot(tweepy.streaming.StreamListener):
     def on_status(self, status):
@@ -34,23 +39,19 @@ class TwitterBot(tweepy.streaming.StreamListener):
         # if you are not talking to me...
         if not status.text.startswith('@' + twitter.me.screen_name):
             if text:
-                try:
-                    lucky_interval = config.get('twitter', 'lucky_interval',
-                                                type=int) * 60
-                    # generate a caption for someone at random.
-                    rl_lucky = utils.ratelimit_hit('twitter', 'lucky',
-                                                   1, lucky_interval)
+                # store this status to score it later in akari_cron
+                with open('pending.txt', 'a') as p_file:
+                    print('%d %s' % (status.id, text), file=p_file)
+
+                # generate a caption for someone at random.
+                if lucky_interval:
+                    rl_lucky = utils.ratelimit_hit('twitter', 'lucky', 1,
+                                                   lucky_interval)
                     if rl_lucky['allowed']:
                         self._print_status(status)
                         utils.logger.warning('%d - Lucky of the draw!',
                                              status.id)
                         self._process(status, text, suppress_errors=True)
-                except KeyError:
-                    pass
-
-                # store this status to score it later in akari_cron
-                with open('pending.txt', 'a') as p_file:
-                    print('%d %s' % (status.id, text), file=p_file)
 
             # then return
             return

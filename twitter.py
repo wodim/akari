@@ -77,7 +77,7 @@ class Twitter(object):
         api_code, message = Twitter.extract_exception(exc)
         user = 'e_%d' % api_code
         rate_limit = utils.ratelimit_hit('twitter_e', user, 1, 7200)
-        if not rate_limit['unavailable'] and rate_limit['allowed']:
+        if rate_limit['allowed']:
             title = 'Error %d connecting to Twitter' % api_code
             text = ('The following error has occurred when I tried to ' +
                     'connect to Twitter:\n\n' +

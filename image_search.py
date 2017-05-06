@@ -1,10 +1,10 @@
+import hashlib
 import json
 import os
 import random
 import re
 import socket
 import urllib
-import uuid
 
 from bs4 import BeautifulSoup
 import requests
@@ -22,68 +22,64 @@ class ImageSearchNoResultsError(Exception):
     pass
 
 
-class GoogleImageSearch(object):
-    def __init__(self, text):
-        utils.logger.info('Starting Google image search: "%s"', text)
+def google_image_search(text):
+    utils.logger.info('Starting Google image search: "%s"', text)
 
-        url = 'https://www.google.es/search'
-        params = {'tbm': 'isch', 'q': text}
+    url = 'https://www.google.es/search'
+    params = {'tbm': 'isch', 'q': text}
 
-        try:
-            s = requests.Session()
-            s.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
-            headers = {'User-Agent': config.get('image_search', 'user_agent')}
-            response = s.get(url, params=params, headers=headers, timeout=3)
-        except (requests.exceptions.RequestException, socket.timeout):
-            raise ImageSearchError('Error making an HTTP request')
-        finally:
-            s.close()
+    try:
+        s = requests.Session()
+        s.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
+        headers = {'User-Agent': config.get('image_search', 'user_agent')}
+        response = s.get(url, params=params, headers=headers, timeout=3)
+    except (requests.exceptions.RequestException, socket.timeout):
+        raise ImageSearchError('Error making an HTTP request')
+    finally:
+        s.close()
 
-        if response.status_code != requests.codes.ok:
-            raise ImageSearchError('Response code not ok (%d)' %
-                                   response.status_code)
+    if response.status_code != requests.codes.ok:
+        raise ImageSearchError('Response code not ok (%d)' %
+                               response.status_code)
 
-        try:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            results_json = [json.loads(x.text) for x in
-                            soup.find_all(class_=re.compile('_meta$'))]
-        except Exception:
-            msg = 'Could not decode response'
-            utils.logger.exception(msg)
-            raise ImageSearchError(msg)
-        finally:
-            soup.decompose()
+    try:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        results_json = [json.loads(x.text) for x in
+                        soup.find_all(class_=re.compile('_meta$'))]
+    except Exception:
+        msg = 'Could not decode response'
+        utils.logger.exception(msg)
+        raise ImageSearchError(msg)
+    finally:
+        soup.decompose()
 
-        results = []
-        for result_json in results_json:
-            image_url = urllib.parse.unquote(result_json['ou'])
-            results.append((image_url, result_json['ru']))
+    results = []
+    for result_json in results_json:
+        image_url = urllib.parse.unquote(result_json['ou'])
+        results.append((image_url, result_json['ru']))
 
-        self.results = results
+    return results
 
 
-class ImageSearch(object):
-    def __init__(self, text):
-        self.results = []
+@utils.memoize('image_search', timeout=60 * 60 * 8)
+def image_search(text):
+    results = google_image_search(text)
 
-        try:
-            override = config.get('image_search', 'override', type=list)
-            results = GoogleImageSearch(random.choice(override)).results
-        except KeyError:
-            results = GoogleImageSearch(text).results
+    if len(results) == 0:
+        raise ImageSearchNoResultsError('No results found for "%s"' % text)
 
-        if len(results) == 0:
-            raise ImageSearchNoResultsError('No results found for "%s"' % text)
+    res = []
+    for image_url, source_url in results:
+        # check if the source is banned and, in that case, ignore it
+        banned_sources = config.get('image_search', 'banned_sources',
+                                    type=list)
+        if (any(x in source_url for x in banned_sources) or
+                any(x in image_url for x in banned_sources)):
+            continue
 
-        for image_url, source_url in results:
-            # check if the source is banned and, in that case, ignore it
-            banned_sources = config.get('image_search', 'banned_sources',
-                                        type=list)
-            if (any(x in source_url for x in banned_sources) or
-                    any(x in image_url for x in banned_sources)):
-                continue
+        res.append(ImageSearchResult(image_url, source_url, text))
 
-            self.results.append(ImageSearchResult(image_url, source_url, text))
+    return res
 
 
 class ImageSearchResultError(Exception):
@@ -95,11 +91,16 @@ class ImageSearchResult(object):
         self.image_url = image_url
         self.source_url = source_url
         self.text = text
-        self.hash = str(uuid.uuid4())
+        self.hash = hashlib.md5(image_url.encode('utf-8')).hexdigest()
 
         self.filename = None  # will be populated after calling .download()
 
     def download(self):
+        self.filename = self.get_path('original')
+        if os.path.isfile(self.filename):
+            utils.logger.info('Returning cached file "%s".', self.image_url)
+            return
+
         try:
             utils.logger.info('Downloading image "%s" from "%s"',
                               self.image_url, self.source_url)
@@ -116,7 +117,7 @@ class ImageSearchResult(object):
             raise ImageSearchResultError('Download of image failed')
 
         # store the image
-        filename = self.get_path('original')
+        filename = self.filename
         utils.logger.info('Saving image to "%s"', filename)
         with open(filename, 'wb') as handle:
             for block in response.iter_content(1024 * 1024):

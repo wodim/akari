@@ -11,7 +11,8 @@ from wand.image import Image
 
 from cache import cache
 from config import config
-from image_search import ImageSearch, ImageSearchResult, ImageSearchResultError
+from image_search import (image_search, ImageSearchResult,
+                          ImageSearchResultError)
 import utils
 
 
@@ -40,7 +41,13 @@ class Akari(object):
             result = ImageSearchResult(image_url, 'overriden', 'overriden')
             results = [result]
         else:
-            results = ImageSearch(self.text).results
+            try:
+                override = config.get('image_search', 'override', type=list)
+                results = image_search(random.choice(override))
+                random.shuffle(results)
+            except KeyError:
+                results = image_search(self.text)
+
             try:
                 limit_results = config.get('akari', 'limit_results', type=int)
                 results = results[:limit_results]
@@ -109,7 +116,7 @@ class Akari(object):
         self.width, self.height = akari_frames[0].width, akari_frames[0].height
 
         # now, get the background image
-        filename = image.get_path('original')
+        filename = image.filename
         with Image(filename=filename) as original:
             # if it's an animation, take only the first frame
             if original.animation:
