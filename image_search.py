@@ -1,7 +1,6 @@
 import hashlib
 import json
 import os
-import random
 import re
 import socket
 import urllib
@@ -94,6 +93,12 @@ class ImageSearchResult(object):
         self.hash = hashlib.md5(image_url.encode('utf-8')).hexdigest()
 
         self.filename = None  # will be populated after calling .download()
+
+    def __del__(self):
+        # clean up all files but the original image
+        for file in [self.get_path(x) for x in ('meta', 'animation', 'still')]:
+            if os.path.isfile(file):
+                os.remove(file)
 
     def download(self):
         self.filename = self.get_path('original')

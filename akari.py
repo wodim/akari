@@ -94,6 +94,7 @@ class Akari(object):
         if not akari_frames:  # cache miss
             masks = config.get('akari', 'frames')
             if os.path.isdir(masks):
+                masks = masks if masks.endswith(os.sep) else masks + os.sep
                 masks = sorted([masks + x for x in os.listdir(masks)])
             else:
                 masks = [masks]
