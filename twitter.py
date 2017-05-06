@@ -66,8 +66,12 @@ class Twitter(object):
     @staticmethod
     def extract_exception(exc):
         # revisit this when tweepy gets its shit together
-        reason = json.loads(exc.reason.replace("'", '"'))[0]
-        return reason['code'], reason['message']
+        try:
+            reason = json.loads(exc.reason.replace("'", '"'))[0]
+            return reason['code'], reason['message']
+        except json.decoder.JSONDecodeError:
+            utils.logger.warning('Undecodeable error: "%s"', exc.reason)
+            return 0, ''
 
     @staticmethod
     def handle_exception(exc):
