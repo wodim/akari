@@ -79,6 +79,10 @@ class Twitter(object):
             return
 
         api_code, message = Twitter.extract_exception(exc)
+
+        if api_code == 0:
+            return
+
         user = 'e_%d' % api_code
         rate_limit = utils.ratelimit_hit('twitter_e', user, 1, 7200)
         if rate_limit['allowed']:
