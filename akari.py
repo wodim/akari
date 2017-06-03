@@ -81,6 +81,26 @@ class Akari(object):
 
         raise AkariComposingError('Could not generate an image.')
 
+    @staticmethod
+    def warmup():
+        """fill the image caches for each frame"""
+        frames = config.get('akari', 'frames')
+        if os.path.isdir(frames):
+            frames = frames if frames.endswith(os.sep) else frames + os.sep
+            frames = sorted([frames + x for x in os.listdir(frames)])
+        else:
+            frames = [frames]
+
+        akari_frames = [Image(filename=x) for x in frames]
+        width, height = akari_frames[0].width, akari_frames[0].height
+
+        # cache all of this
+        cache.set('akari:frames', akari_frames)
+        cache.set('akari:width', width)
+        cache.set('akari:height', height)
+
+        utils.logger.warning('Akari initialised.')
+
     def compose(self, image):
         utils.logger.info('Starting to compose Akari...')
 
@@ -88,33 +108,25 @@ class Akari(object):
         if '#' in self.text:
             self.text = ' ' + self.text + ' '
 
-        # try to get all masks from cache
-        akari_frames = cache.get('akari_frames:%s' % self.type)
+        if 'akari:frames' not in cache:
+            # cache miss
+            utils.logger.warning('Akari frames were not warmed up!')
+            self.warmup()
 
-        if not akari_frames:  # cache miss
-            masks = config.get('akari', 'frames')
-            if os.path.isdir(masks):
-                masks = masks if masks.endswith(os.sep) else masks + os.sep
-                masks = sorted([masks + x for x in os.listdir(masks)])
-            else:
-                masks = [masks]
+        akari_frames = cache.get('akari:frames')
+        self.width = cache.get('akari:width')
+        self.height = cache.get('akari:height')
+        self.type = cache.get('akari:type')
 
-            # if we were asked to generate an animation but there's only one
-            # mask, then we're generating a still image
-            if self.type == 'animation' and len(masks) == 1:
-                self.type = 'still'
+        # if we were asked to generate an animation but there's only one
+        # mask, then we're generating a still image
+        if self.type == 'animation' and len(akari_frames) == 1:
+            self.type = 'still'
 
-            # if we were asked to generate a still image and there are several
-            # masks, use only the first one
-            if self.type == 'still' and len(masks) > 1:
-                masks = [masks[0]]
-
-            akari_frames = [Image(filename=x) for x in masks]
-
-            # cache all of this
-            cache.set('akari_frames:%s' % self.type, akari_frames)
-
-        self.width, self.height = akari_frames[0].width, akari_frames[0].height
+        # if we were asked to generate a still image and there are several
+        # masks, use only the first one
+        if self.type == 'still' and len(akari_frames) > 1:
+            akari_frames = [akari_frames[0]]
 
         # now, get the background image
         filename = image.filename
@@ -258,13 +270,13 @@ class Akari(object):
 
 
 def akari_cron():
+    Akari.warmup()
+
     # if there's an override, try to post it, but if it fails, continue
     # normally.
     try:
         cron_override = config.get('twitter', 'cron_override')
         if cron_override and akari_cron_override(cron_override):
-            # remove it so it's not posted in loop
-            config.set('twitter', 'cron_override', '')
             return
     except Exception:
         pass

@@ -4,6 +4,7 @@ import random
 import tweepy
 
 from akari import Akari
+from cache import cache
 from config import config
 from tasks import is_eligible
 from image_search import ImageSearchNoResultsError
@@ -43,15 +44,12 @@ class TwitterBot(tweepy.streaming.StreamListener):
                 with open('pending.txt', 'a') as p_file:
                     print('%d %s' % (status.id, text), file=p_file)
 
-                # generate a caption for someone at random.
-                if lucky_interval:
-                    rl_lucky = utils.ratelimit_hit('twitter', 'lucky', 1,
-                                                   lucky_interval)
-                    if rl_lucky['allowed']:
-                        self._print_status(status)
-                        utils.logger.warning('%d - Lucky of the draw!',
-                                             status.id)
-                        self._process(status, text, suppress_errors=True)
+                # generate an unsolicited image for someone every once in
+                # a while.
+                if self._got_lucky():
+                    self._print_status(status)
+                    utils.logger.warning('%d - Lucky of the draw!', status.id)
+                    self._process(status, text, suppress_errors=True)
 
             # then return
             return
@@ -63,6 +61,12 @@ class TwitterBot(tweepy.streaming.StreamListener):
                 image_url = status.entities['media'][0]['media_url'] + ':orig'
         except KeyError:  # both for config.get and the status.entities lookup
             pass
+
+        # if there's a user-provided image but there's no text and we are
+        # generating still images, don't do anything at all (in this case,
+        # we would just copy the image around without doing anything useful)
+        if image_url and not text and len(cache.get('akari:frames')) == 1:
+            return
 
         # if after being cleaned up the status turns out to be empty and
         # there's no image, return
@@ -201,6 +205,16 @@ class TwitterBot(tweepy.streaming.StreamListener):
                           status.id, utils.clean(status.text),
                           status.author.screen_name, status.source)
 
+    def _got_lucky(self):
+        if not lucky_interval:
+            return False
+
+        rl_lucky = utils.ratelimit_hit('twitter', 'lucky', 1, lucky_interval)
+        if rl_lucky['allowed']:
+            return True
+
+        return False
+
     def on_error(self, status_code):
         utils.logger.warning('An error has occured! Status code = %d',
                              status_code)
@@ -211,6 +225,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
 
 if __name__ == '__main__':
+    Akari.warmup()
+
     listener = TwitterBot()
     stream = tweepy.Stream(twitter.auth, listener)
     stream.userstream()

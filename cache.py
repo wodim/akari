@@ -12,6 +12,9 @@ class Cache(object):
     def set(self, key, value):
         self.cache[key] = value
 
+    def __contains__(self, key):
+        return key in self.cache
+
 
 # this is a global, shared instance of Cache to be used by anybody
 cache = Cache()

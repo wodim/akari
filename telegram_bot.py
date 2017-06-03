@@ -190,6 +190,8 @@ class TelegramBot(telepot.aio.Bot):
 
 
 if __name__ == '__main__':
+    Akari.warmup()
+
     bot = TelegramBot(config.get('telegram', 'token'))
 
     loop = asyncio.get_event_loop()
