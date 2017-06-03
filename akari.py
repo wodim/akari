@@ -273,7 +273,7 @@ def akari_cron():
 
     ids = []
     # get a random line. will error out if there are none, which is okay.
-    with open('pending.txt') as file:
+    with open('pending.txt', errors='replace') as file:
         for line in file.read().splitlines():
             id_, text = line.split(' ', 1)
 
