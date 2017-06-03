@@ -84,15 +84,24 @@ class Akari(object):
     @staticmethod
     def warmup():
         """fill the image caches for each frame"""
-        frames = config.get('akari', 'frames')
-        if os.path.isdir(frames):
-            frames = frames if frames.endswith(os.sep) else frames + os.sep
-            frames = sorted([frames + x for x in os.listdir(frames)])
-        else:
-            frames = [frames]
+        try:
+            frames = config.get('akari', 'frames')
+        except KeyError:
+            frames = None
 
-        akari_frames = [Image(filename=x) for x in frames]
-        width, height = akari_frames[0].width, akari_frames[0].height
+        if frames:
+            if os.path.isdir(frames):
+                if not frames.endswith(os.sep):
+                    frames += os.sep
+                frames = sorted([frames + x for x in os.listdir(frames)])
+            else:
+                frames = [frames]
+
+            akari_frames = [Image(filename=x) for x in frames]
+            width, height = akari_frames[0].width, akari_frames[0].height
+        else:
+            akari_frames = []
+            width, height = 1600, 1200
 
         # cache all of this
         cache.set('akari:frames', akari_frames)
@@ -116,11 +125,10 @@ class Akari(object):
         akari_frames = cache.get('akari:frames')
         self.width = cache.get('akari:width')
         self.height = cache.get('akari:height')
-        self.type = cache.get('akari:type')
 
         # if we were asked to generate an animation but there's only one
         # mask, then we're generating a still image
-        if self.type == 'animation' and len(akari_frames) == 1:
+        if self.type == 'animation' and len(akari_frames) < 2:
             self.type = 'still'
 
         # if we were asked to generate a still image and there are several
@@ -174,6 +182,13 @@ class Akari(object):
                 with result.sequence[-1]:
                     result.sequence[-1].delay = 10
             # remove this frame from memory (it's in the sequence already)
+            this_frame.close()
+        if not akari_frames:
+            # shortcut in case there's no mask
+            this_frame = Image(bg_img)
+            if drawing:
+                drawing(this_frame)
+            result = Image(this_frame)
             this_frame.close()
 
         # save the result
