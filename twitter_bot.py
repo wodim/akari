@@ -65,7 +65,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
         # if there's a user-provided image but there's no text and we are
         # generating still images, don't do anything at all (in this case,
         # we would just copy the image around without doing anything useful)
-        if image_url and not text and len(cache.get('akari:frames')) == 1:
+        if image_url and not text and len(cache.get('akari:frames')) < 2:
             return
 
         # if after being cleaned up the status turns out to be empty and

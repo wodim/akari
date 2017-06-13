@@ -32,6 +32,10 @@ class Akari(object):
     def __init__(self, text, type='still', shuffle_results=False,
                  caption=None, image_url=None):
         self.text = text
+        # make hashtags searchable
+        if '#' in self.text:
+            self.text = ' %s ' % self.text
+
         self.caption = caption if caption else self.text
         if type not in ('still', 'animation'):
             raise ValueError('Incorrect Akari type "%s"' % type)
@@ -113,10 +117,6 @@ class Akari(object):
     def compose(self, image):
         utils.logger.info('Starting to compose Akari...')
 
-        # make hashtags searchable
-        if '#' in self.text:
-            self.text = ' ' + self.text + ' '
-
         if 'akari:frames' not in cache:
             # cache miss
             utils.logger.warning('Akari frames were not warmed up!')
@@ -126,14 +126,13 @@ class Akari(object):
         self.width = cache.get('akari:width')
         self.height = cache.get('akari:height')
 
-        # if we were asked to generate an animation but there's only one
-        # mask, then we're generating a still image
         if self.type == 'animation' and len(akari_frames) < 2:
+            # if we were asked to generate an animation but there's only one
+            # mask, then we're generating a still image
             self.type = 'still'
-
-        # if we were asked to generate a still image and there are several
-        # masks, use only the first one
-        if self.type == 'still' and len(akari_frames) > 1:
+        elif self.type == 'still' and len(akari_frames) > 1:
+            # if we were asked to generate a still image and there are several
+            # masks, use only the first one
             akari_frames = [akari_frames[0]]
 
         # now, get the background image
