@@ -1,5 +1,6 @@
-requests==2.12.3
-telepot==10.2
+telepot==12.0
 Wand==0.4.4
-beautifulsoup4==4.5.1
+requests==2.18.1
+redis==2.10.5
 tweepy==3.5.0
+beautifulsoup4==4.6.0

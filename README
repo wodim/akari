@@ -11,7 +11,7 @@ On Telegram, the bot can also be asked to generate images, but it does not
 send images automatically or anything like that.
 
 This codebase also features a few other goodies such as:
-* Basic rate limiting
+* Basic rate limiting, using Redis
 * Translation API, not used at the moment
 * Follows and unfollows people automatically, ignoring obvious spammers
 * Can send mails using Mailgun (currently used for stuff that needs to be fixed
@@ -38,7 +38,18 @@ you just need to:
 
 $ pip install -r requirements.txt
 
-In turn, you'll need the imagemagick dev headers.
+In turn, you'll need imagemagick, and also a Redis server. The Redis server is
+used for rate limiting of requests and of "out of service" mails sent.
+
+Rate limits are important for the Telegram bot: on Twitter it's
+hard to spam the bot because Twitter itself will throttle you, but there's no
+limit in the amount of messages you can send to the bot on Telegram, so if you
+don't want to have Redis, you might as well not use the Telegram bot.
+Rate limits are also applied on Twitter, but they are much "softer".
+
+The Twitter bot also mails you in case it's failing to connect to Twitter,
+which happens when the account gets locked. Mails are rate limited, so Redis
+is necessary for this too.
 
 You'll need to copy config.ini.skel to config.ini and populate it, the
 settings are explained inside the file as comments.
