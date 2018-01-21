@@ -37,8 +37,9 @@ class TwitterBot(tweepy.streaming.StreamListener):
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
 
-        # if you are not talking to me...
-        if not status.text.startswith('@' + twitter.me.screen_name):
+        # if you are not talking to me, or if requests are disabled...
+        if not status.text.startswith('@' + twitter.me.screen_name) or
+                not config.get('twitter', 'user_requests', type=bool):
             if text:
                 # store this status to score it later in akari_cron
                 with open('pending.txt', 'a') as p_file:
@@ -52,6 +53,11 @@ class TwitterBot(tweepy.streaming.StreamListener):
                     self._process(status, text, suppress_errors=True)
 
             # then return
+            return
+
+        # see if the text in this request is blacklisted. if so do nothing.
+        bl = config.get('twitter', 'request_blacklist', type='re_list')
+        if any(x.search(text) for x in bl):
             return
 
         # see if there's an image (and if that's allowed)
