@@ -154,10 +154,10 @@ class TwitterBot(tweepy.streaming.StreamListener):
                 return
             utils.logger.exception('Error composing the image')
             msgs = ("Can't hear ya...",
-                    "Ooops, I'm a bit busy at the moment.",
+                    "Ooops, I'm busy at the moment.",
                     "I don't feel so well right now.",
                     'Sorry, I fell asleep.')
-            text = random.choice(msgs) + ' Try again a bit later.'
+            text = '%s Try again a bit later.' % random.choice(msgs)
             image = config.get('twitter', 'error_image')
 
         # start building a reply. prepend @nick of whoever we are replying to
