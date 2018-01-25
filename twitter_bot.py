@@ -38,8 +38,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
 
         # if you are not talking to me, or if requests are disabled...
-        if not status.text.startswith('@' + twitter.me.screen_name) or
-                not config.get('twitter', 'user_requests', type=bool):
+        if (not status.text.startswith('@' + twitter.me.screen_name) or
+                not config.get('twitter', 'user_requests', type=bool)):
             if text:
                 # store this status to score it later in akari_cron
                 with open('pending.txt', 'a') as p_file:
