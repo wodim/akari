@@ -51,25 +51,28 @@ The Twitter bot also mails you in case it's failing to connect to Twitter,
 which happens when the account gets locked. Mails are rate limited, so Redis
 is necessary for this too.
 
-You'll need to copy config.ini.skel to config.ini and populate it, the
+You'll need to copy config.ini.example to config.ini and populate it, the
 settings are explained inside the file as comments.
 
 About the crontab:
 
-*/20 * * * * import akari; akari.akari_cron()
+*/15 * * * * import akari; akari.akari_cron()
 Every twenty minutes, generate a new caption based on the last tweets.
 Those tweets are stored in pending.txt. The file is emptied once a new caption
 has been successfully published.
 
-*/15 * * * * import tasks; tasks.follow_my_followers()
-Every fifteen minutes, check for new followers, and then follow them back.
+*/5 * * * * import tasks; tasks.follow_my_followers()
+Every five minutes, check for new followers, and then follow them back.
 
-0 6 * * * import tasks; tasks.unfollow_my_unfollowers()"
-Every night at 6:00, check for users I follow but who no longer follow me back
+0 */1 * * * import tasks; tasks.unfollow_my_unfollowers()
+Every hour, check for users I follow but who no longer follow me back
 and unfollow them.
 
-0 6 * * * find akari_endlosung/images -type f -delete
-Every night at 6:00, empty the images folder. Images are *not* automatically
+0 */3 * * * import tasks; tasks.retweet_promo_tweet()
+Every three hours, retweet the promo tweet.
+
+0 6 * * * find akari/images -type f -delete ; find /tmp -type f -name 'magick-*' -delete
+Every night at 6:00, remove all temporary images. Images are *not* automatically
 removed after being posted.
 
 Also, you'll need a process control system that automatically launches both
