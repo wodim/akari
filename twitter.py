@@ -20,11 +20,22 @@ class Twitter(object):
             self.auth.set_access_token(access_token, access_token_secret)
             self.api = tweepy.API(self.auth)
             self.me = self.api.me()
+            try:
+                self.bio_ok = config.get('twitter', 'bio_ok')
+                self.bio_ratelimit = config.get('twitter', 'bio_ratelimit')
+            except KeyError:
+                self.bio_ok = self.bio_ratelimit = None
         except tweepy.error.TweepError as exc:
             Twitter.handle_exception(exc)
             raise
 
         utils.logger.info('Twitter API initialised.')
+
+    def _update_bio(self, new_bio):
+        if new_bio and self.me.description != new_bio:
+            utils.logger.info('Setting new bio: "%s"', new_bio)
+            self.api.update_profile(description=new_bio)
+            self.me = self.api.me()  # refresh this
 
     def post(self, status='', media=None, retries=5, **kwargs):
         # this is a wrapper around _post() so it's retried several times
@@ -37,10 +48,14 @@ class Twitter(object):
                 api_code, message = self.extract_exception(exc)
                 if api_code in {130, 131}:  # over capacity, internal error
                     utils.logger.info('Server-side error. Retrying...')
+                elif api_code == 185:  # over the rate limit
+                    self._update_bio(self.bio_ratelimit)
+                    raise
                 else:
                     raise
             else:
-                return
+                self._update_bio(self.bio_ok)
+                return  # needed to escape the for
 
     def _post(self, status, media, **kwargs):
         if not status and not media:
