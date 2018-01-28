@@ -24,7 +24,7 @@ class ImageSearchNoResultsError(Exception):
 def google_image_search(text):
     utils.logger.info('Starting Google image search: "%s"', text)
 
-    url = 'https://www.google.es/search'
+    url = 'https://www.google.com/search'
     params = {'tbm': 'isch', 'q': text}
 
     try:
