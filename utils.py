@@ -135,7 +135,7 @@ def decay(time_, max_time, coeff):
     threshold = max_time - time_
     if threshold < 0:
         threshold = 0
-    return 1 + threshold * (coeff - 1) / max_time
+    return 1 + threshold * coeff / max_time
 
 
 def background(func):
