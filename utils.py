@@ -51,7 +51,7 @@ db = DB()
 # allowed: whether the action was accepted
 # left: how many requests are left until next reset
 # reset: how many seconds until the rate limit is reset
-def ratelimit_hit(prefix, user, max=50, ttl=60 * 10):
+def ratelimit_hit(prefix, user, max_=50, ttl=60 * 10):
     def r(x, y, z): return {'allowed': x, 'left': y, 'reset': z}
     # if the server is not available, let it through
     if not db.server_available:
@@ -63,14 +63,20 @@ def ratelimit_hit(prefix, user, max=50, ttl=60 * 10):
         # if key does not exist...
         db.server.set(key, 1)
         db.server.expire(key, ttl)
-        return r(True, max - 1, ttl)
+        return r(True, max_ - 1, ttl)
     else:
         current_ttl = db.server.ttl(key)
-        if int(value) >= max:
+        if not current_ttl:
+            # for some reason sometimes redis stores the keys with no ttl.
+            # this means the ratelimit is never reset and the bot stays locked.
+            # if that happens just remove the key and accept the hit.
+            db.server.delete(key)
+            return r(True, max_ - 1, ttl)
+        if int(value) >= max_:
             return r(False, 0, current_ttl)
         else:
             db.server.incr(key)
-            return r(True, max - 1 - int(value), current_ttl)
+            return r(True, max_ - 1 - int(value), current_ttl)
 
 
 def timedelta(time_):
