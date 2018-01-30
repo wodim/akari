@@ -273,9 +273,10 @@ class Akari(object):
         drawing.gravity = 'south'
         text = fill(caption, 30)
         drawing.fill_color = Color('#000')
-        drawing.translate(7, self.height / 15)
+        offset = drawing.font_size / 12
+        drawing.translate(offset, self.height / 15)
         drawing.text(0, 0, text)
-        drawing.translate(-7, 7)
+        drawing.translate(-offset, offset)
         drawing.fill_color = Color('#eee')
         drawing.text(0, 0, text)
         return caption, drawing
