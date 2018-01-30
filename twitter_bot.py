@@ -11,13 +11,23 @@ from image_search import ImageSearchNoResultsError
 from twitter import twitter
 import utils
 
-try:
-    lucky_interval = config.get('twitter', 'lucky_interval', type=int) * 60
-except KeyError:
-    lucky_interval = None
-
 
 class TwitterBot(tweepy.streaming.StreamListener):
+    def __init__(self):
+        super().__init__()
+        self.lucky_interval = config.get('twitter', 'lucky_interval', type=int)
+        self.lucky_interval *= 60
+        self.sources_whitelist = config.get('twitter', 'sources_whitelist',
+                                            type=list)
+        self.user_requests = config.get('twitter', 'user_requests',
+                                        type=bool, default=True)
+        self.request_blacklist = config.get('twitter', 'request_blacklist',
+                                            type='re_list')
+        self.user_images = config.get('twitter', 'user_images', type=bool,
+                                      default=True)
+        self.delete_triggers = config.get('twitter', 'delete_triggers',
+                                          type='re_list')
+
     def on_status(self, status):
         # ignore yourself
         if status.author.screen_name == twitter.me.screen_name:
@@ -28,18 +38,15 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # if the sources whitelist is enabled, ignore those who aren't on it
-        try:
-            whitelist = config.get('twitter', 'sources_whitelist', type=list)
-            if status.source not in whitelist:
-                return
-        except KeyError:
-            pass
+        if (self.sources_whitelist and
+                status.source not in self.sources_whitelist):
+            return
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
 
         # if you are not talking to me, or if requests are disabled...
         if (not status.text.startswith('@' + twitter.me.screen_name) or
-                not config.get('twitter', 'user_requests', type=bool)):
+                not self.user_requests):
             if text:
                 # store this status to score it later in akari_cron
                 with open('pending.txt', 'a') as p_file:
@@ -56,16 +63,16 @@ class TwitterBot(tweepy.streaming.StreamListener):
             return
 
         # see if the text in this request is blacklisted. if so do nothing.
-        bl = config.get('twitter', 'request_blacklist', type='re_list')
-        if any(x.search(text) for x in bl):
+        if (self.request_blacklist and
+                any(x.search(text) for x in self.request_blacklist)):
             return
 
         # see if there's an image (and if that's allowed)
         image_url = None
         try:
-            if config.get('twitter', 'user_images', type=bool):
+            if self.user_images:
                 image_url = status.entities['media'][0]['media_url'] + ':orig'
-        except KeyError:  # both for config.get and the status.entities lookup
+        except KeyError:
             pass
 
         # if there's a user-provided image but there's no text and we are
@@ -82,8 +89,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
         self._print_status(status)
 
         try:
-            triggers = config.get('twitter', 'delete_triggers', type='re_list')
-            if any(x.search(text) for x in triggers):
+            if (self.delete_triggers and
+                    any(x.search(text) for x in self.delete_triggers)):
                 if self._self_delete(status):
                     return
             # if removal is not successful, we will generate a caption.
@@ -212,10 +219,11 @@ class TwitterBot(tweepy.streaming.StreamListener):
                           status.author.screen_name, status.source)
 
     def _got_lucky(self):
-        if not lucky_interval:
+        if not self.lucky_interval:
             return False
 
-        rl_lucky = utils.ratelimit_hit('twitter', 'lucky', 1, lucky_interval)
+        rl_lucky = utils.ratelimit_hit('twitter', 'lucky', 1,
+                                       self.lucky_interval)
         if rl_lucky['allowed']:
             return True
 

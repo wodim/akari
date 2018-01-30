@@ -43,12 +43,14 @@ class TelegramBot(telepot.aio.Bot):
         self.username = config.get('telegram', 'username')
         realname = config.get('telegram', 'realname')
         self.help_msg_priv = self.HELP_MSG_PRIV % realname
-        try:
-            tw_url = config.get('telegram', 'twitter_url')
+        tw_url = config.get('telegram', 'twitter_url')
+        if tw_url:
             self.help_msg_priv += self.HELP_MSG_TW + tw_url
-        except KeyError:
-            pass
         self.help_msg_group = self.HELP_MSG_GROUP % realname
+
+        self.rate_limit_exemptions = config.get('telegram',
+                                                'rate_limit_exemptions',
+                                                type='int_list')
 
     async def on_chat_message(self, message):
         try:
@@ -103,9 +105,7 @@ class TelegramBot(telepot.aio.Bot):
                 return
 
             # check rate limit if this chat id is not exempt from them
-            exemptions = config.get('telegram', 'rate_limit_exemptions',
-                                    type='int_list')
-            if chat_id not in exemptions:
+            if chat_id not in self.rate_limit_exemptions:
                 rate_limit = utils.ratelimit_hit('telegram', chat_id)
                 if not rate_limit['allowed']:
                     msg = 'Message from %s: throttled (resets in %d seconds)'

@@ -41,23 +41,25 @@ class Akari(object):
             raise ValueError('Incorrect Akari type "%s"' % type)
         self.type = type
 
+        self.override = config.get('image_search', 'override', type=list)
+        self.limit_results = config.get('akari', 'limit_results', type=int)
+        self.caption_type = config.get('akari', 'caption_type')
+
         if image_url:
             result = ImageSearchResult(image_url, 'overriden', 'overriden')
             results = [result]
         else:
-            try:
-                override = config.get('image_search', 'override', type=list)
-                results = image_search(random.choice(override))
+            if self.override:
+                results = image_search(random.choice(self.override))
                 random.shuffle(results)
-            except KeyError:
+            else:
                 results = image_search(self.text)
 
-            try:
-                limit_results = config.get('akari', 'limit_results', type=int)
-                results = results[:limit_results]
+            if self.limit_results:
+                results = results[:self.limit_results]
                 if shuffle_results:
                     random.shuffle(results)
-            except KeyError:
+            else:
                 # results are always shuffled if # of results is uncapped
                 random.shuffle(results)
 
@@ -88,15 +90,11 @@ class Akari(object):
     @staticmethod
     def warmup():
         """fill the image caches for each frame"""
-        try:
-            frames = config.get('akari', 'frames')
-        except KeyError:
-            frames = None
-
+        frames = config.get('akari', 'frames')
+        if not frames.endswith(os.sep):
+            frames += os.sep
         if frames:
             if os.path.isdir(frames):
-                if not frames.endswith(os.sep):
-                    frames += os.sep
                 frames = sorted([frames + x for x in os.listdir(frames)])
             else:
                 frames = [frames]
@@ -151,9 +149,9 @@ class Akari(object):
 
         if self.text:
             # generate the drawing to be applied to each frame
-            if config.get('akari', 'caption_type') == 'seinfeld':
+            if self.caption_type == 'seinfeld':
                 caption, drawing = self._caption_seinfeld()
-            elif config.get('akari', 'caption_type') == 'sanandreas':
+            elif self.caption_type == 'sanandreas':
                 caption, drawing = self._caption_sanandreas()
             else:
                 caption, drawing = self._caption_akari()

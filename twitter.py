@@ -20,11 +20,8 @@ class Twitter(object):
             self.auth.set_access_token(access_token, access_token_secret)
             self.api = tweepy.API(self.auth)
             self.me = self.api.me()
-            try:
-                self.bio_ok = config.get('twitter', 'bio_ok')
-                self.bio_ratelimit = config.get('twitter', 'bio_ratelimit')
-            except KeyError:
-                self.bio_ok = self.bio_ratelimit = None
+            self.bio_ok = config.get('twitter', 'bio_ok')
+            self.bio_ratelimit = config.get('twitter', 'bio_ratelimit')
         except tweepy.error.TweepError as exc:
             Twitter.handle_exception(exc)
             raise

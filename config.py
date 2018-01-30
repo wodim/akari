@@ -86,27 +86,29 @@ class Config(object):
         self.config.set(section, key, self._to_config_str(value))
         self._save()
 
-    def get(self, section, key, type=str):
+    def get(self, section, key, type=str, default=None):
         try:
             return self._cache_get(section, key)
         except ConfigCacheMissError:
             try:
-                if type == int:
+                if type in (int, 'int'):
                     ret = self._to_int(self._get(section, key))
-                elif type == list:
+                elif type in (list, 'list'):
                     ret = self._to_list(self._get(section, key))
                 elif type == 're_list':
                     ret = self._to_re_list(self._get(section, key))
                 elif type == 'int_list':
                     ret = self._to_int_list(self._get(section, key))
-                elif type == str:
+                elif type in (str, 'str'):
                     ret = self._to_str(self._get(section, key))
-                elif type == bool:
+                elif type in (bool, 'bool'):
                     ret = self._get_bool(section, key)
+                else:
+                    raise ValueError('Unknown type: %s' % type)
                 self._cache_set(section, key, ret)
                 return ret
             except KeyError:
-                raise
+                return default
 
 
 try:
