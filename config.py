@@ -116,3 +116,17 @@ try:
 except IndexError:
     filename = 'config.ini'
 config = Config(filename)
+
+
+def cfg(key):
+    """small shorthand method for config.get. key is section:key:type
+        where type is optional"""
+    parts = key.split(':')
+    if len(parts) == 3:
+        section, key, type_ = parts
+        return config.get(section, key, type_)
+    elif len(parts) == 2:
+        section, key = parts
+        return config.get(section, key)
+    else:
+        raise ValueError('Malformed key: "%s"' % key)

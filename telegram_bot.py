@@ -5,7 +5,7 @@ import telepot
 import telepot.aio
 
 from akari import Akari
-from config import config
+from config import cfg
 from image_search import ImageSearchNoResultsError
 import utils
 
@@ -40,17 +40,16 @@ class TelegramBot(telepot.aio.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._answerer = telepot.aio.helper.Answerer(self)
-        self.username = config.get('telegram', 'username')
-        realname = config.get('telegram', 'realname')
+        self.username = cfg('telegram:username')
+        realname = cfg('telegram:realname')
         self.help_msg_priv = self.HELP_MSG_PRIV % realname
-        tw_url = config.get('telegram', 'twitter_url')
+        tw_url = cfg('telegram:twitter_url')
         if tw_url:
             self.help_msg_priv += self.HELP_MSG_TW + tw_url
         self.help_msg_group = self.HELP_MSG_GROUP % realname
 
-        self.rate_limit_exemptions = config.get('telegram',
-                                                'rate_limit_exemptions',
-                                                type='int_list')
+        self.rate_limit_exemptions = cfg('telegram:rate_limit_exemptions:'
+                                         'int_list')
 
     async def on_chat_message(self, message):
         try:
@@ -192,7 +191,7 @@ class TelegramBot(telepot.aio.Bot):
 if __name__ == '__main__':
     Akari.warmup()
 
-    bot = TelegramBot(config.get('telegram', 'token'))
+    bot = TelegramBot(cfg('telegram:token'))
 
     loop = asyncio.get_event_loop()
     loop.create_task(bot.message_loop())

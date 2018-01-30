@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import requests
 from wand.image import Image
 
-from config import config
+from config import cfg
 import utils
 
 
@@ -30,7 +30,7 @@ def google_image_search(text):
     try:
         sess = requests.Session()
         sess.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
-        headers = {'User-Agent': config.get('image_search', 'user_agent')}
+        headers = {'User-Agent': cfg('image_search:user_agent')}
         response = sess.get(url, params=params, headers=headers, timeout=3)
     except (requests.exceptions.RequestException, socket.timeout):
         raise ImageSearchError('Error making an HTTP request')
@@ -70,8 +70,7 @@ def image_search(text):
     res = []
     for image_url, source_url in results:
         # check if the source is banned and, in that case, ignore it
-        banned_sources = config.get('image_search', 'banned_sources',
-                                    type=list)
+        banned_sources = cfg('image_search:banned_sources:list')
         if (any(x in source_url for x in banned_sources) or
                 any(x in image_url for x in banned_sources)):
             continue
@@ -104,7 +103,7 @@ class ImageSearchResult(object):
             utils.logger.info('Downloading image "%s" from "%s"',
                               self.image_url, self.source_url)
             headers = {'Accept': '*/*',
-                       'User-Agent': config.get('image_search', 'user_agent'),
+                       'User-Agent': cfg('image_search:user_agent'),
                        'Referer': self.source_url}
             response = requests.get(self.image_url, headers=headers, timeout=5)
         except (requests.exceptions.RequestException, socket.timeout):

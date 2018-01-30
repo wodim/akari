@@ -5,7 +5,7 @@ import tweepy
 
 from akari import Akari
 from cache import cache
-from config import config
+from config import cfg
 from tasks import is_eligible
 from image_search import ImageSearchNoResultsError
 from twitter import twitter
@@ -15,18 +15,20 @@ import utils
 class TwitterBot(tweepy.streaming.StreamListener):
     def __init__(self):
         super().__init__()
-        self.lucky_interval = config.get('twitter', 'lucky_interval', type=int)
+        self.lucky_interval = cfg('twitter:lucky_interval:int')
         self.lucky_interval *= 60
-        self.sources_whitelist = config.get('twitter', 'sources_whitelist',
-                                            type=list)
-        self.user_requests = config.get('twitter', 'user_requests',
-                                        type=bool, default=True)
-        self.request_blacklist = config.get('twitter', 'request_blacklist',
-                                            type='re_list')
-        self.user_images = config.get('twitter', 'user_images', type=bool,
-                                      default=True)
-        self.delete_triggers = config.get('twitter', 'delete_triggers',
-                                          type='re_list')
+        self.sources_whitelist = cfg('twitter:sources_whitelist:list')
+        self.user_requests = cfg('twitter:user_requests:bool')
+        if self.user_requests is None:
+            self.user_requests = True
+        self.request_blacklist = cfg('twitter:request_blacklist:re_list')
+        self.user_images = cfg('twitter:user_images:bool')
+        if self.user_images is None:
+            self.user_images = True
+        self.delete_triggers = cfg('twitter:delete_triggers:re_list')
+        self.load_avg_still = cfg('twitter:load_avg_still:int')
+        self.no_results_image = cfg('twitter:no_results_image')
+        self.error_image = cfg('twitter:error_image')
 
     def on_status(self, status):
         # ignore yourself
@@ -128,11 +130,10 @@ class TwitterBot(tweepy.streaming.StreamListener):
         # if the one-minute load avg is greater than load_avg_still, generate
         # still captions
         try:
-            load_avg_still = config.get('twitter', 'load_avg_still', type=int)
             load_avg = os.getloadavg()[0]
-            if load_avg_still and load_avg > load_avg_still:
+            if self.load_avg_still and load_avg > self.load_avg_still:
                 utils.logger.warning('Load average too high! (%i > %i)',
-                                     load_avg, load_avg_still)
+                                     load_avg, self.load_avg_still)
                 akari_type = 'still'
             else:
                 akari_type = 'animation'
@@ -153,7 +154,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
                     "I didn't find anything.",
                     'There are no results.')
             text = random.choice(msgs)
-            image = config.get('twitter', 'no_results_image')
+            image = self.no_results_image
         except KeyboardInterrupt:
             raise
         except Exception:
@@ -165,7 +166,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
                     "I don't feel so well right now.",
                     'Sorry, I fell asleep.')
             text = '%s Try again a bit later.' % random.choice(msgs)
-            image = config.get('twitter', 'error_image')
+            image = self.error_image
 
         # start building a reply. prepend @nick of whoever we are replying to
         reply = '@%s %s' % (status.author.screen_name, text)

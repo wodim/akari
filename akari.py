@@ -10,7 +10,7 @@ from wand.drawing import Drawing
 from wand.image import Image
 
 from cache import cache
-from config import config
+from config import cfg
 from image_search import (image_search, ImageSearchResult,
                           ImageSearchResultError)
 import utils
@@ -41,9 +41,9 @@ class Akari(object):
             raise ValueError('Incorrect Akari type "%s"' % type)
         self.type = type
 
-        self.override = config.get('image_search', 'override', type=list)
-        self.limit_results = config.get('akari', 'limit_results', type=int)
-        self.caption_type = config.get('akari', 'caption_type')
+        self.override = cfg('image_search:override:list')
+        self.limit_results = cfg('akari:limit_results:int')
+        self.caption_type = cfg('akari:caption_type')
 
         if image_url:
             result = ImageSearchResult(image_url, 'overriden', 'overriden')
@@ -90,7 +90,7 @@ class Akari(object):
     @staticmethod
     def warmup():
         """fill the image caches for each frame"""
-        frames = config.get('akari', 'frames')
+        frames = cfg('akari:frames')
         if frames:
             if not frames.endswith(os.sep):
                 frames += os.sep
@@ -288,7 +288,7 @@ def akari_cron():
     # if there's an override, try to post it, but if it fails, continue
     # normally.
     try:
-        cron_override = config.get('twitter', 'cron_override')
+        cron_override = cfg('twitter:cron_override')
         if cron_override and akari_cron_override(cron_override):
             return
     except Exception:
@@ -303,7 +303,7 @@ def akari_cron():
             id_, text = line.split(' ', 1)
 
             # if the blacklist is enabled, ignore tweets that match it
-            blacklist = config.get('twitter', 'text_blacklist', type='re_list')
+            blacklist = cfg('twitter:text_blacklist:re_list')
             if any(x.search(text) for x in blacklist):
                 continue
 
@@ -331,7 +331,7 @@ def akari_cron():
                                  urls=True, replies=True, rts=True)
         meat = sum(c in string.ascii_letters for c in clean_text) or -1
         # also, get the author's lang and filter him if it's not in the wl
-        wl = config.get('twitter', 'cron_lang_whitelist', type=list)
+        wl = cfg('twitter:cron_lang_whitelist:list')
         if (wl and status.user.lang not in wl) or meat / len(clean_text) < 0.8:
             score /= 10
 

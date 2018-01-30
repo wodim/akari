@@ -2,7 +2,7 @@ import json
 
 import tweepy
 
-from config import config
+from config import cfg
 import utils
 
 
@@ -20,8 +20,8 @@ class Twitter(object):
             self.auth.set_access_token(access_token, access_token_secret)
             self.api = tweepy.API(self.auth)
             self.me = self.api.me()
-            self.bio_ok = config.get('twitter', 'bio_ok')
-            self.bio_ratelimit = config.get('twitter', 'bio_ratelimit')
+            self.bio_ok = cfg('twitter:bio_ok')
+            self.bio_ratelimit = cfg('twitter:bio_ratelimit')
         except tweepy.error.TweepError as exc:
             Twitter.handle_exception(exc)
             raise
@@ -87,7 +87,7 @@ class Twitter(object):
 
     @staticmethod
     def handle_exception(exc):
-        if not config.get('mail', 'enabled', type=bool):
+        if not cfg('mail:enabled:bool'):
             return
 
         api_code, message = Twitter.extract_exception(exc)
@@ -105,7 +105,7 @@ class Twitter(object):
             utils.send_email(title, text)
 
 
-twitter = Twitter(config.get('twitter', 'consumer_key'),
-                  config.get('twitter', 'consumer_secret'),
-                  config.get('twitter', 'access_token'),
-                  config.get('twitter', 'access_token_secret'))
+twitter = Twitter(cfg('twitter:consumer_key'),
+                  cfg('twitter:consumer_secret'),
+                  cfg('twitter:access_token'),
+                  cfg('twitter:access_token_secret'))

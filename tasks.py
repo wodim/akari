@@ -1,6 +1,6 @@
 import tweepy
 
-from config import config
+from config import cfg
 from twitter import twitter
 import utils
 
@@ -63,7 +63,7 @@ def is_eligible(user):
 
 
 def retweet_promo_tweet():
-    promo_tweet_id = config.get('twitter', 'promo_tweet_id', type=int)
+    promo_tweet_id = cfg('twitter:promo_tweet_id:int')
     try:
         tweet = twitter.api.get_status(promo_tweet_id, include_my_retweet=True)
     except tweepy.error.TweepError:
