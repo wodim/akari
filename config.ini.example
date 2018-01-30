@@ -79,6 +79,11 @@ request_blacklist = \bnigger, \bk[i1]k[e3], \bf[a4]gg[o0e3]t
 bio_ok = 「あかり大好き」 Mention me and I’ll make a GIF for you. To have something removed, reply with “delete this”.
 bio_ratelimit = WARNING: the bot is rate limited and may be unable to respond. If that happens, just wait a few minutes. To have something removed, reply with “delete this”.
 
+; Twitter exposes the language of all users. Tweets written by users who have
+; configured Twitter in languages other than the ones specified below won't
+; be stored in the pending.txt file and will therefore not be eligible for cron
+cron_lang_whitelist = en
+
 [telegram]
 ; You can talk to the BotFather on Telegram to create an account for the bot.
 ; Once you've created it, you'll receive a token, which is what you need to put

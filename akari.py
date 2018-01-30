@@ -329,7 +329,9 @@ def akari_cron():
         clean_text = utils.clean(status.text,
                                  urls=True, replies=True, rts=True)
         meat = sum(c in string.ascii_letters for c in clean_text) or -1
-        if meat / len(clean_text) < 0.8:
+        # also, get the author's lang and filter him if it's not in the wl
+        wl = config.get('twitter', 'cron_lang_whitelist', type=list)
+        if (wl and status.user.lang not in wl) or meat / len(clean_text) < 0.8:
             score /= 10
 
         return score
