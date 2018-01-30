@@ -180,27 +180,27 @@ class TwitterBot(tweepy.streaming.StreamListener):
     def _self_delete(self, status):
         if not status.in_reply_to_status_id:
             utils.logger.warning('This status has no "in reply to" field.')
-            return
+            return False
 
         try:
             status_del = twitter.api.get_status(status.in_reply_to_status_id)
         except tweepy.error.TweepError:
             utils.logger.exception('Failed to get the status pointed by '
                                    'the "in reply to" field.')
-            return
+            return False
 
         if not status_del.text.startswith('@%s ' % status.user.screen_name):
             utils.logger.warning('The status pointed by the "in reply to" '
                                  "wasn't in reply to a status made by the "
                                  'user who requested the removal.')
-            return
+            return False
 
         try:
             twitter.api.destroy_status(status_del.id)
         except tweepy.error.TweepError:
             utils.logger.exception('Failed to remove the status pointed by '
                                    'the "in reply to" field.')
-            return
+            return False
         else:
             utils.logger.info('Deleted: %d "%s"', status_del.id,
                               status_del.text)

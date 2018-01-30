@@ -28,14 +28,14 @@ def google_image_search(text):
     params = {'tbm': 'isch', 'q': text}
 
     try:
-        s = requests.Session()
-        s.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
+        sess = requests.Session()
+        sess.mount('https://', requests.adapters.HTTPAdapter(max_retries=10))
         headers = {'User-Agent': config.get('image_search', 'user_agent')}
-        response = s.get(url, params=params, headers=headers, timeout=3)
+        response = sess.get(url, params=params, headers=headers, timeout=3)
     except (requests.exceptions.RequestException, socket.timeout):
         raise ImageSearchError('Error making an HTTP request')
     finally:
-        s.close()
+        sess.close()
 
     if response.status_code != requests.codes.ok:
         raise ImageSearchError('Response code not ok (%d)' %
@@ -64,7 +64,7 @@ def google_image_search(text):
 def image_search(text):
     results = google_image_search(text)
 
-    if len(results) == 0:
+    if not results:
         raise ImageSearchNoResultsError('No results found for "%s"' % text)
 
     res = []

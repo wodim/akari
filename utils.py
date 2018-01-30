@@ -33,6 +33,7 @@ logger = Logger().get_logger()
 
 
 class DB(object):
+    """wrapper for redis"""
     server_available = False
 
     def __init__(self):
@@ -41,23 +42,32 @@ class DB(object):
             self.server.ping()
             logger.warning('Redis initialised.')
             self.server_available = True
-        except Exception as e:
-            logger.warning('Redis server unavailable: ' + str(e))
+        except Exception as exc:
+            logger.warning('Redis server unavailable: %s', exc)
 
 
 db = DB()
 
 
-# allowed: whether the action was accepted
-# left: how many requests are left until next reset
-# reset: how many seconds until the rate limit is reset
 def ratelimit_hit(prefix, user, max_=50, ttl=60 * 10):
-    def r(x, y, z): return {'allowed': x, 'left': y, 'reset': z}
+    """Hits a ratelimit.
+        In:
+            prefix: prefix of the ratelimit (twitter, etc)
+            user:   postfix of the ratelimit (a specific user, general, etc)
+            max_:   max number of hits in ttl
+            ttl:    secs until the ttl is reset (default: 10 mins)
+        Out:
+            allowed: whether the hit was allowed
+            left:    number of hits left until next reset
+            reset:   seconds until next reset
+    """
+    def r(x, y, z):
+        return {'allowed': x, 'left': y, 'reset': z}
     # if the server is not available, let it through
     if not db.server_available:
         return r(True, 1, 0)
 
-    key = str(prefix) + ':' + str(user)
+    key = '%s:%s' % (prefix, user)
     value = db.server.get(key)
     if not value:
         # if key does not exist...
@@ -111,25 +121,20 @@ regex_whitespace = re.compile(r'\s+')
 
 
 def clean(text, replies=False, hashtags=False, rts=False, urls=False):
+    """cleans up text that comes from twitter."""
     text = text.replace('\n', ' ')
     text = text.replace('\r', ' ')
     text = html.unescape(text)
-
     if rts:
         text = regex_rts.sub('', text)
-
     if replies:
         text = regex_replies.sub('', text)
-
     if hashtags:
         text = regex_hashtags.sub('', text)
-
     if urls:
         text = regex_urls.sub('', text)
-
     text = regex_whitespace.sub(' ', text)
     text = text.strip()
-
     return text
 
 
@@ -138,6 +143,8 @@ def ellipsis(text, max_length):
 
 
 def decay(time_, max_time, coeff):
+    """returns a multiplier that starts at coeff + 1.0 and linearly approaches
+        1.0 as time_ approaches max_time"""
     threshold = max_time - time_
     if threshold < 0:
         threshold = 0
@@ -145,12 +152,12 @@ def decay(time_, max_time, coeff):
 
 
 def background(func):
+    """executes the function in a thread of its own"""
     @functools.wraps(func)
     def background_func(*args, **kwargs):
         thread = threading.Thread(target=func, args=args, kwargs=kwargs)
         thread.start()
         return thread
-
     return background_func
 
 

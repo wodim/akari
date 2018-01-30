@@ -66,7 +66,7 @@ class Akari(object):
             try:
                 result.download()
             except ImageSearchResultError as exc:
-                utils.logger.info('Error downloading this result: ' + str(exc))
+                utils.logger.info('Error downloading this result: %s', exc)
                 continue
 
             # then, compose it. 3 tries, in case Wand acts funny.
