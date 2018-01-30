@@ -7,7 +7,6 @@ import re
 import textwrap
 import threading
 
-import redis
 import requests
 
 from config import config
@@ -37,11 +36,14 @@ class DB(object):
     server_available = False
 
     def __init__(self):
-        self.server = redis.Redis(socket_connect_timeout=1)
         try:
+            import redis
+            self.server = redis.Redis(socket_connect_timeout=1)
             self.server.ping()
             logger.warning('Redis initialised.')
             self.server_available = True
+        except ImportError as exc:
+            logger.warning('Redis library could not be imported: %s', exc)
         except Exception as exc:
             logger.warning('Redis server unavailable: %s', exc)
 
@@ -197,6 +199,10 @@ def memoize(name, timeout=30):
     def memoize_fn(func):
         @functools.wraps(func)
         def new_fn(*args, **kwargs):
+            if not db.server_available:
+                # if redis is unavailable just do your job and return.
+                return func(*args, **kwargs)
+
             key = 'memo:%s:%s' % (name, make_key_id(*args, **kwargs))
 
             res = db.server.get(key)
