@@ -91,9 +91,9 @@ class Akari(object):
     def warmup():
         """fill the image caches for each frame"""
         frames = config.get('akari', 'frames')
-        if not frames.endswith(os.sep):
-            frames += os.sep
         if frames:
+            if not frames.endswith(os.sep):
+                frames += os.sep
             if os.path.isdir(frames):
                 frames = sorted([frames + x for x in os.listdir(frames)])
             else:
