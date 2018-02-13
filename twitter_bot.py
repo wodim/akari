@@ -16,7 +16,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
     def __init__(self):
         super().__init__()
         self.lucky_interval = cfg('twitter:lucky_interval:int')
-        self.lucky_interval *= 60
+        if self.lucky_interval:
+            self.lucky_interval *= 60
         self.sources_whitelist = cfg('twitter:sources_whitelist:list')
         self.user_requests = cfg('twitter:user_requests:bool')
         if self.user_requests is None:
