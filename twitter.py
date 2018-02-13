@@ -32,7 +32,11 @@ class Twitter(object):
         if new_bio and self.me.description != new_bio:
             utils.logger.info('Setting new bio: "%s"', new_bio)
             self.api.update_profile(description=new_bio)
-            self.me = self.api.me()  # refresh this
+            # set the new bio in the "me" object manually.
+            # refreshing from self.api.me() seems like a good idea but it's
+            # not, because Twitter might leave the old bio in cache for a few
+            # seconds.
+            self.me.description = new_bio
 
     def post(self, status='', media=None, retries=5, **kwargs):
         # this is a wrapper around _post() so it's retried several times
