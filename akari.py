@@ -325,14 +325,19 @@ def akari_cron():
         score = utils.decay(diff, 15 * 60, 1.5)
         score *= (favs * 3 + rts) / followers
 
-        # filter garbage. at least 80% of letters in the status must be
-        # /a-zA-Z/, or there's a big penalty
+        # apply penalties. some tweets carry a penalty but are not removed
+        # right away, in case there isn't anything better.
+        # at least 80% of letters in the status must be /a-zA-Z/
         clean_text = utils.clean(status.text,
                                  urls=True, replies=True, rts=True)
         meat = sum(c in string.ascii_letters for c in clean_text) or -1
         # also, get the author's lang and filter him if it's not in the wl
-        wl = cfg('twitter:cron_lang_whitelist:list')
-        if (wl and status.user.lang not in wl) or meat / len(clean_text) < 0.8:
+        lang_wl = cfg('twitter:cron_lang_whitelist:list')
+        # filter quoted tweets
+        filter_quotes = cfg('twitter:cron_filter_quotes:bool')
+        if ((lang_wl and status.user.lang not in lang_wl) or
+                (filter_quotes and status.is_quote_status) or
+                meat / len(clean_text) < 0.8):
             score /= 10
 
         return score

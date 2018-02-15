@@ -84,6 +84,9 @@ bio_ratelimit = WARNING: the bot is rate limited and may be unable to respond. I
 ; be stored in the pending.txt file and will therefore not be eligible for cron
 cron_lang_whitelist = en
 
+; Apply a penalty to quoted tweets
+cron_filter_quotes = no
+
 [telegram]
 ; You can talk to the BotFather on Telegram to create an account for the bot.
 ; Once you've created it, you'll receive a token, which is what you need to put
