@@ -51,9 +51,10 @@ class TwitterBot(tweepy.streaming.StreamListener):
         if (not status.text.startswith('@' + twitter.me.screen_name) or
                 not self.user_requests):
             if text:
+                text_no_nl = utils.clean(status.text)
                 # store this status to score it later in akari_cron
                 with open('pending.txt', 'a') as p_file:
-                    print('%d %s' % (status.id, text), file=p_file)
+                    print('%d %s' % (status.id, text_no_nl), file=p_file)
 
                 # generate an unsolicited image for someone every once in
                 # a while.
