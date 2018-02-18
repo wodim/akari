@@ -315,9 +315,7 @@ def akari_cron():
         favs = status.favorite_count
         rts = status.retweet_count
         followers = status.user.followers_count
-        if (followers == 0 or
-                followers < followers_median * 2.5 or
-                favs < favs_median):
+        if followers == 0:
             return -1
 
         # decay coefficient. promotes newer tweets to compensate for the
@@ -339,7 +337,9 @@ def akari_cron():
         filter_quotes = cfg('twitter:cron_filter_quotes:bool')
         if ((lang_wl and status.user.lang not in lang_wl) or
                 (filter_quotes and status.is_quote_status) or
-                meat / len(clean_text) < 0.8):
+                meat / len(clean_text) < 0.8 or
+                followers < followers_median or
+                favs < favs_median):
             score /= 10
 
         return score
@@ -352,7 +352,8 @@ def akari_cron():
     followers_median = statistics.median(status.user.followers_count
                                          for status in statuses)
     favs_median = statistics.median(status.favorite_count
-                                    for status in statuses)
+                                    for status in statuses
+                                    if status.favorite_count > 0)
     statuses.sort(key=score, reverse=True)
 
     # try to generate an image for the first status. if that fails, keep
