@@ -362,7 +362,8 @@ def akari_cron():
         try:
             caption = utils.clean(status.text,
                                   urls=True, replies=True, rts=True)
-            utils.logger.info('Posting "%s" from %d', caption, status.id)
+            utils.logger.info('Posting "%s" from %s',
+                              caption, twitter.status_to_url(status))
             akari = Akari(caption, type='animation', shuffle_results=False)
             break
         except Exception:
