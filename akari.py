@@ -315,7 +315,9 @@ def akari_cron():
         favs = status.favorite_count
         rts = status.retweet_count
         followers = status.user.followers_count
-        if followers == 0 or followers < median * 2.5:
+        if (followers == 0 or
+                followers < followers_median * 2.5 or
+                favs < favs_median):
             return -1
 
         # decay coefficient. promotes newer tweets to compensate for the
@@ -347,8 +349,10 @@ def akari_cron():
     for i in range(0, len(ids), 100):
         group = ids[i:i + 100]
         statuses.extend(tuple(twitter.api.statuses_lookup(group)))
-    median = statistics.median(status.user.followers_count
-                               for status in statuses)
+    followers_median = statistics.median(status.user.followers_count
+                                         for status in statuses)
+    favs_median = statistics.median(status.favorite_count
+                                    for status in statuses)
     statuses.sort(key=score, reverse=True)
 
     # try to generate an image for the first status. if that fails, keep
