@@ -315,7 +315,8 @@ def akari_cron():
         favs = status.favorite_count
         rts = status.retweet_count
         followers = status.user.followers_count
-        if followers == 0:
+        if (followers == 0 or  # avoid division by zero later on
+                status.user.protected):  # don't post from protected users
             return -1
 
         # decay coefficient. promotes newer tweets to compensate for the
