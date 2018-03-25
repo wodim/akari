@@ -60,8 +60,13 @@ def google_image_search(text):
     return results
 
 
+# this should be \b, but hyphens are considered to be part of the word
+regex_remove_not = re.compile(r'(\W)-')
+
+
 @utils.memoize('image_search', timeout=60 * 60 * 8)
 def image_search(text):
+    text = regex_remove_not.sub(r'\1', text)
     results = google_image_search(text)
 
     if not results:
