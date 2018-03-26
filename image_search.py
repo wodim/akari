@@ -66,6 +66,7 @@ regex_remove_not = re.compile(r'(\W)-')
 
 @utils.memoize('image_search', timeout=60 * 60 * 8)
 def image_search(text):
+    # remove leading hyphens from words
     text = regex_remove_not.sub(r'\1', text)
     results = google_image_search(text)
 
@@ -95,7 +96,6 @@ class ImageSearchResult(object):
         self.source_url = source_url
         self.text = text
         self.hash = hashlib.md5(image_url.encode('utf-8')).hexdigest()
-
         self.filename = None  # will be populated after calling .download()
 
     def download(self):
@@ -120,9 +120,8 @@ class ImageSearchResult(object):
             raise ImageSearchResultError('Download of image failed')
 
         # store the image
-        filename = self.filename
-        utils.logger.info('Saving image to "%s"', filename)
-        with open(filename, 'wb') as handle:
+        utils.logger.info('Saving image to "%s"', self.filename)
+        with open(self.filename, 'wb') as handle:
             for block in response.iter_content(1024 * 1024):
                 if not block:
                     break
@@ -136,13 +135,13 @@ class ImageSearchResult(object):
             print('query:  %s' % self.text, file=fp)
 
         # check the size of the image before loading it into memory
-        if os.stat(filename).st_size > 25 * 1024 * 1024:
+        if os.stat(self.filename).st_size > 25 * 1024 * 1024:
             raise ImageSearchResultError('Image too big')
 
         # try to get Wand to load it as an image. if that doesn't work, raise
         # an exception so that we try with the next result
         try:
-            image = Image(filename=filename)
+            image = Image(filename=self.filename)
         except Exception:
             raise ImageSearchResultError('Not an image')
         else:
