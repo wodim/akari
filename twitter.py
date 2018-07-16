@@ -7,8 +7,8 @@ import utils
 
 
 class Twitter(object):
-    MAX_STATUS_LENGTH = 140
-    MAX_STATUS_WITH_MEDIA_LENGTH = 116
+    MAX_STATUS_LENGTH = 280
+    MAX_STATUS_WITH_MEDIA_LENGTH = 280
 
     def __init__(self,
                  consumer_key, consumer_secret,
