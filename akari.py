@@ -375,7 +375,10 @@ def akari_cron():
     # this will crash it there's no caption available thus far, that's fine,
     # as the amount of tries has been exceeded and there was nothing left to do
     # anyway.
-    twitter.post(status=akari.caption, media=akari.filename)
+    if cfg('twitter:text_in_status:bool'):
+        twitter.post(status=akari.caption, media=akari.filename)
+    else:
+        twitter.post(media=akari.filename)
 
     # if a new caption has been successfully published, empty the file
     with open('pending.txt', 'w'):

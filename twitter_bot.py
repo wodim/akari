@@ -142,6 +142,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
         except KeyError:
             pass
 
+        error = False
         try:
             akari = Akari(text, type=akari_type, shuffle_results=True,
                           image_url=image_url)
@@ -157,6 +158,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
                     'There are no results.')
             text = random.choice(msgs)
             image = self.no_results_image
+            error = True
         except KeyboardInterrupt:
             raise
         except Exception:
@@ -169,9 +171,13 @@ class TwitterBot(tweepy.streaming.StreamListener):
                     'Sorry, I fell asleep.')
             text = '%s Try again a bit later.' % random.choice(msgs)
             image = self.error_image
+            error = True
 
         # start building a reply. prepend @nick of whoever we are replying to
-        reply = '@%s %s' % (status.author.screen_name, text)
+        if cfg('twitter:text_in_status:bool') or error:
+            reply = '@%s %s' % (status.author.screen_name, text)
+        else:
+            reply = '@%s' % (status.author.screen_name)
 
         # post it
         try:
