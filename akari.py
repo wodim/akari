@@ -323,7 +323,7 @@ def akari_cron():
         # lower amount of favs they have received (fewer people have seen
         # them, in theory)
         diff = (datetime.utcnow() - status.created_at).total_seconds()
-        score = utils.decay(diff, 15 * 60, 1.5)
+        score = utils.decay(diff, cfg('twitter:cron_interval:int') * 60, 1.5)
         score *= (favs * 3 + rts) / followers
 
         # apply penalties. some tweets carry a penalty but are not removed

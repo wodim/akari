@@ -57,7 +57,7 @@ settings are explained inside the file as comments.
 About the crontab:
 
 */15 * * * * import akari; akari.akari_cron()
-Every twenty minutes, generate a new caption based on the last tweets.
+Every fifteen minutes, generate a new caption based on the last tweets.
 Those tweets are stored in pending.txt. The file is emptied once a new caption
 has been successfully published.
 
