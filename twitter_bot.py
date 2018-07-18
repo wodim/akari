@@ -43,6 +43,9 @@ class TwitterBot(tweepy.streaming.StreamListener):
         # if the sources whitelist is enabled, ignore those who aren't on it
         if (self.sources_whitelist and
                 status.source not in self.sources_whitelist):
+            self._print_status(status)
+            utils.logger.warning('%d - Source not in whitelist: %s',
+                                 status.id, status.source)
             return
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
@@ -69,6 +72,8 @@ class TwitterBot(tweepy.streaming.StreamListener):
         # see if the text in this request is blacklisted. if so do nothing.
         if (self.request_blacklist and
                 any(x.search(text) for x in self.request_blacklist)):
+            self._print_status(status)
+            utils.logger.warning('%d - Text is blacklisted, request ignored')
             return
 
         # see if there's an image (and if that's allowed)
