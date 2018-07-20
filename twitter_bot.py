@@ -43,9 +43,6 @@ class TwitterBot(tweepy.streaming.StreamListener):
         # if the sources whitelist is enabled, ignore those who aren't on it
         if (self.sources_whitelist and
                 status.source not in self.sources_whitelist):
-            self._print_status(status)
-            utils.logger.warning('%d - Source not in whitelist: %s',
-                                 status.id, status.source)
             return
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
