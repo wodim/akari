@@ -70,7 +70,7 @@ class TwitterBot(tweepy.streaming.StreamListener):
         if (self.request_blacklist and
                 any(x.search(text) for x in self.request_blacklist)):
             self._print_status(status)
-            utils.logger.warning('%d - Text is blacklisted, request ignored')
+            utils.logger.warning('Text is blacklisted, request ignored')
             return
 
         # see if there's an image (and if that's allowed)
