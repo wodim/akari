@@ -18,7 +18,7 @@ class Twitter(object):
         try:
             self.auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
             self.auth.set_access_token(access_token, access_token_secret)
-            self.api = tweepy.API(self.auth)
+            self.api = tweepy.API(self.auth, compression=True)
             self.me = self.api.me()
             self.bio_ok = cfg('twitter:bio_ok')
             self.bio_ratelimit = cfg('twitter:bio_ratelimit')
