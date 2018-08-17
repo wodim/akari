@@ -1,6 +1,7 @@
 import configparser
 import re
 import sys
+from time import sleep
 
 from cache import cache
 
@@ -10,17 +11,28 @@ class ConfigCacheMissError(Exception):
 
 
 class Config(object):
-    def __init__(self, filename, cached=True):
+    def __init__(self, filename, cached=True, retry=5):
+        """cached: use cache
+            retry: how many times to retry opening the config file if it's
+                locked. there's a delay of 1 second between retries"""
         self.config = configparser.ConfigParser()
         self.filename = filename
         self.cached = cached
+        self.retry = retry
 
-        try:
-            with open(self.filename) as fp:
-                self.config.read_file(fp)
-        except FileNotFoundError:
-            # pretend it's an empty file
-            pass
+        for _ in range(self.retry):
+            try:
+                with open(self.filename) as fp:
+                    self.config.read_file(fp)
+                return
+            except FileNotFoundError:
+                # pretend it's an empty file
+                return
+            except OSError:
+                # file locked, try again in 1 second
+                sleep(1)
+        raise OSError("I couldn't open the config file after %d retries" %
+                      self.retry)
 
     def __enter__(self):
         return self
@@ -29,8 +41,16 @@ class Config(object):
         return self._save()
 
     def _save(self):
-        with open(self.filename, 'w') as fp:
-            self.config.write(fp)
+        for _ in range(self.retry):
+            try:
+                with open(self.filename, 'w') as fp:
+                    self.config.write(fp)
+                return
+            except OSError:
+                # file locked, try again in 1 second
+                sleep(1)
+        raise OSError("I couldn't open the config file after %d retries" %
+                      self.retry)
 
     def _get(self, section, key):
         try:
@@ -118,15 +138,26 @@ except IndexError:
 config = Config(filename)
 
 
-def cfg(key):
+def cfg(key, config_handle=config):
     """small shorthand method for config.get. key is section:key:type
         where type is optional"""
     parts = key.split(':')
     if len(parts) == 3:
         section, key, type_ = parts
-        return config.get(section, key, type_)
+        return config_handle.get(section, key, type_)
     elif len(parts) == 2:
         section, key = parts
-        return config.get(section, key)
+        return config_handle.get(section, key)
+    else:
+        raise ValueError('Malformed key: "%s"' % key)
+
+
+def cfgs(key, value, config_handle=config):
+    """small shorthand method for config.set. key is section:key; type is
+        always str"""
+    parts = key.split(':')
+    if len(parts) == 2:
+        section, key = parts
+        return config_handle.set(section, key, value)
     else:
         raise ValueError('Malformed key: "%s"' % key)
