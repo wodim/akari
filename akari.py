@@ -110,8 +110,6 @@ class Akari(object):
         cache.set('akari:width', width)
         cache.set('akari:height', height)
 
-        utils.logger.warning('Akari initialised.')
-
     def compose(self, image):
         utils.logger.info('Starting to compose Akari...')
 

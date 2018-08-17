@@ -22,7 +22,6 @@ class Logger(object):
         logging.basicConfig(format=format_, style='{',
                             datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
         self.logger = logging.getLogger('akari_endlosung')
-        self.logger.info('Logger initialised.')
 
     def get_logger(self):
         return self.logger
@@ -40,7 +39,6 @@ class DB(object):
             import redis
             self.server = redis.Redis(socket_connect_timeout=1)
             self.server.ping()
-            logger.warning('Redis initialised.')
             self.server_available = True
         except ImportError as exc:
             logger.warning('Redis library could not be imported: %s', exc)
