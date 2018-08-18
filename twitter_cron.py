@@ -149,16 +149,46 @@ def process_request(queue):
     no_results_image = cfg('twitter:no_results_image')
     error_image = cfg('twitter:error_image')
 
+    def process_self_delete(status):
+        if not status.in_reply_to_status_id:
+            utils.logger.warning('This status has no "in reply to" field.')
+            return False
+
+        try:
+            status_del = twitter.api.get_status(status.in_reply_to_status_id)
+        except tweepy.error.TweepError:
+            utils.logger.exception('Failed to get the status pointed by '
+                                   'the "in reply to" field.')
+            return False
+
+        if not status_del.text.startswith('@%s ' % status.user.screen_name):
+            utils.logger.warning('The status pointed by the "in reply to" '
+                                 "wasn't in reply to a status made by the "
+                                 'user who requested the removal.')
+            return False
+
+        try:
+            twitter.api.destroy_status(status_del.id)
+        except tweepy.error.TweepError:
+            utils.logger.exception('Failed to remove the status pointed by '
+                                   'the "in reply to" field.')
+            return False
+        else:
+            utils.logger.info('Deleted: %d "%s"', status_del.id,
+                              status_del.text)
+            return True
+
     while True:
         status = queue.get()
+        print_status(status)
 
         text = utils.clean(status.text, urls=True, replies=True, rts=True)
 
         # see if the text in this request is blacklisted. if so do nothing.
         if (request_blacklist and
                 any(x.search(text) for x in request_blacklist)):
-            print_status(status)
             utils.logger.warning('Text is blacklisted, request ignored')
+            queue.task_done()
             continue
 
         # see if there's an image (and if that's allowed)
@@ -173,18 +203,22 @@ def process_request(queue):
         # generating still images, don't do anything at all (in this case,
         # we would just copy the image around without doing anything useful)
         if image_url and not text and len(cache.get('akari:frames')) < 2:
-            return
+            utils.logger.warning('Refusing to generate a still image from a '
+                                 'still image')
+            queue.task_done()
+            continue
 
         # if after being cleaned up the status turns out to be empty and
         # there's no image, return
         if not text and not image_url:
-            return
-
-        print_status(status)
+            utils.logger.info('No text and no image. Nothing to do.')
+            queue.task_done()
+            continue
 
         if (delete_triggers and any(x.search(text) for x in delete_triggers)):
             if process_self_delete(status):
-                return
+                queue.task_done()
+                continue
         # if removal is not successful, we will generate a caption.
 
         # apply a strict ratelimit to people with fewer than 25 followers
@@ -193,13 +227,15 @@ def process_request(queue):
                 not rate_limit_slow['allowed']):
             utils.logger.info('%d - Ignoring because of low follower count',
                               status.id)
-            return
+            queue.task_done()
+            continue
 
         # apply a lax ratelimit to the rest of users
         rate_limit = utils.ratelimit_hit('twitter', 'global', 20, 60)
         if not rate_limit['allowed']:
             utils.logger.info('%d - Ignoring because of ratelimit', status.id)
-            return
+            queue.task_done()
+            continue
 
         # so we'll generate something for this guy...
 
@@ -271,36 +307,6 @@ def process_request(queue):
             utils.logger.exception('Error posting.')
 
         queue.task_done()
-
-
-def process_self_delete(status):
-    if not status.in_reply_to_status_id:
-        utils.logger.warning('This status has no "in reply to" field.')
-        return False
-
-    try:
-        status_del = twitter.api.get_status(status.in_reply_to_status_id)
-    except tweepy.error.TweepError:
-        utils.logger.exception('Failed to get the status pointed by '
-                               'the "in reply to" field.')
-        return False
-
-    if not status_del.text.startswith('@%s ' % status.user.screen_name):
-        utils.logger.warning('The status pointed by the "in reply to" '
-                             "wasn't in reply to a status made by the "
-                             'user who requested the removal.')
-        return False
-
-    try:
-        twitter.api.destroy_status(status_del.id)
-    except tweepy.error.TweepError:
-        utils.logger.exception('Failed to remove the status pointed by '
-                               'the "in reply to" field.')
-        return False
-    else:
-        utils.logger.info('Deleted: %d "%s"', status_del.id,
-                          status_del.text)
-        return True
 
 
 def print_status(status):
