@@ -5,15 +5,12 @@ import tweepy
 
 from akari import Akari
 from cache import cache
-from config import cfg, cfgs, Config
+from config import cfg
 from parallel import Parallel
 from tasks import is_eligible
 from image_search import ImageSearchNoResultsError
 from twitter import twitter
 import utils
-
-
-state_config = Config('state.ini')
 
 
 def process_timeline():
@@ -23,14 +20,10 @@ def process_timeline():
     sources_whitelist = cfg('twitter:sources_whitelist:list')
 
     try:
-        since_id = cfg('last_ids:home_timeline:int',
-                       config_handle=state_config)
-        if since_id:
-            utils.logging.info('State: since_id=%d', since_id)
-            params['since_id'] = since_id
-        else:
-            utils.logging.warning("There's no last id saved, "
-                                  "so I'm starting from the beginning.")
+        with open('state_home_timeline.txt') as fp:
+            since_id = int(fp.read())
+        utils.logging.info('State: since_id=%d', since_id)
+        params['since_id'] = since_id
     except Exception as exc:
         utils.logging.exception("Couldn't figure what the last tweet was, "
                                 "so I'm starting from the beginning.")
@@ -73,8 +66,8 @@ def process_timeline():
         utils.logging.info('Retrieved %d new statuses (from %d to %d).',
                            len(filtered_statuses), filtered_statuses[0].id,
                            filtered_statuses[-1].id)
-        cfgs('last_ids:home_timeline', str(filtered_statuses[-1].id),
-             config_handle=state_config)
+        with open('state_home_timeline.txt', 'wt') as fp:
+            fp.write(str(filtered_statuses[-1].id))
     else:
         utils.logging.info('Retrieved no new statuses.')
 
@@ -89,14 +82,15 @@ def process_mentions():
     sources_whitelist = cfg('twitter:sources_whitelist:list')
     mention_prefix = '@%s ' % twitter.me.screen_name.lower()
 
-    since_id = cfg('last_ids:mentions_timeline:int',
-                   config_handle=state_config)
-    if since_id:
+    try:
+        with open('state_mentions_timeline.txt') as fp:
+            since_id = int(fp.read())
         utils.logging.info('State: since_id=%d', since_id)
         params['since_id'] = since_id
-    else:
+    except Exception as exc:
         utils.logging.warning("There's no last id saved, so I will save the "
                               'last id I see and then quit.')
+        since_id = None
 
     filtered_statuses = []
     statuses = [status for page in
@@ -106,8 +100,8 @@ def process_mentions():
     statuses = statuses[::-1]
     if not since_id:
         since_id = statuses[-1].id
-        cfgs('last_ids:mentions_timeline', str(since_id),
-             config_handle=state_config)
+        with open('state_mentions_timeline.txt', 'wt') as fp:
+            fp.write(str(since_id))
         utils.logging.info('New since_id=%d. Goodbye!', since_id)
         return
 
@@ -132,11 +126,11 @@ def process_mentions():
         filtered_statuses.append(status)
 
     if filtered_statuses:
-        utils.logging.info('Retrieved %d new notifications (from %d to %d).',
+        utils.logging.info('Retrieved %d new mentions (from %d to %d).',
                            len(filtered_statuses), filtered_statuses[0].id,
                            filtered_statuses[-1].id)
-        cfgs('last_ids:mentions_timeline', str(filtered_statuses[-1].id),
-             config_handle=state_config)
+        with open('state_mentions_timeline.txt', 'wt') as fp:
+            fp.write(str(filtered_statuses[-1].id))
 
         Akari.warmup()
 
@@ -144,7 +138,7 @@ def process_mentions():
                             cfg('twitter:process_threads:int') or 3)
         parallel.start()
     else:
-        utils.logging.info('Retrieved no new notifications.')
+        utils.logging.info('Retrieved no new mentions.')
 
 
 def process_request(queue):
