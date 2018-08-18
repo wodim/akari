@@ -14,8 +14,8 @@ from config import cfg
 
 class Logger(object):
     def __init__(self):
-        for i in ('requests', 'urllib3', 'tweepy'):
-            logging.getLogger(i).setLevel(logging.WARNING)
+        for logger in ('requests', 'urllib3', 'tweepy'):
+            logging.getLogger(logger).setLevel(logging.WARNING)
 
         format_ = ('{asctime}: {process:>5} '
                    '[{filename:>16}:{lineno:<4} {funcName:>16}()] {message}')
@@ -54,12 +54,12 @@ def ratelimit_hit(prefix, user, max_=50, ttl=60 * 10):
         In:
             prefix: prefix of the ratelimit (twitter, etc)
             user:   postfix of the ratelimit (a specific user, general, etc)
-            max_:   max number of hits in ttl
-            ttl:    secs until the ttl is reset (default: 10 mins)
+            max_:   max number of hits allowed in ttl secs
+            ttl:    secs until the ratelimit is reset (default: 10 mins)
         Out:
             allowed: whether the hit was allowed
-            left:    number of hits left until next reset
-            reset:   seconds until next reset
+            left:    hits left until next reset
+            reset:   seconds left until next reset
     """
     def r(x, y, z):
         return {'allowed': x, 'left': y, 'reset': z}
