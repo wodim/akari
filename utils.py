@@ -17,8 +17,8 @@ class Logger(object):
         for i in ('requests', 'urllib3', 'tweepy'):
             logging.getLogger(i).setLevel(logging.WARNING)
 
-        format_ = ('[{filename:>16}:{lineno:<4} {funcName:>16}()] ' +
-                   '{asctime}: {message}')
+        format_ = ('{asctime}: {process:>5} '
+                   '[{filename:>16}:{lineno:<4} {funcName:>16}()] {message}')
         logging.basicConfig(format=format_, style='{',
                             datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
         self.logger = logging.getLogger('akari_endlosung')
