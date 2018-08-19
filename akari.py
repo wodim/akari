@@ -322,7 +322,7 @@ def akari_cron():
         # them, in theory)
         diff = (datetime.utcnow() - status.created_at).total_seconds()
         score = utils.decay(diff, cfg('twitter:cron_interval:int') * 60, 1.5)
-        score *= (favs * 3 + rts) / followers
+        score *= (favs + rts * 2) / followers
 
         # apply penalties. some tweets carry a penalty but are not removed
         # right away, in case there isn't anything better.
@@ -337,7 +337,7 @@ def akari_cron():
         if ((lang_wl and status.user.lang not in lang_wl) or
                 (filter_quotes and status.is_quote_status) or
                 meat / len(clean_text) < 0.8 or
-                followers < followers_median or
+                followers < (followers_median * 1.5) or
                 favs < favs_median):
             score /= 10
 
