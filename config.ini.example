@@ -41,6 +41,9 @@ error_image = assets/out-of-service.gif
 ; instead.
 ; cron_override =
 
+; If overriding, use this image URL instead of performing a search.
+; cron_override_image_url =
+
 ; This tweet id will be retweeted when tasks.retweet_promo_tweet() is called.
 ; If there's a previous retweet, it'll be undone first.
 ; promo_tweet_id =

@@ -383,12 +383,12 @@ def akari_cron():
         pass
 
 
-def akari_cron_override(caption):
-    from twitter import twitter
-
-    utils.logger.info('Overriding cron with "%s"!', caption)
-    akari = Akari(caption, type='animation', shuffle_results=False)
-    twitter.post(status=akari.caption, media=akari.filename)
+def akari_cron_override(text):
+    utils.logger.info('Overriding cron with "%s"!', text)
+    params = dict(type='animation', shuffle_results=False)
+    if cfg('twitter:cron_override_image_url'):
+        params['image_url'] = cfg('twitter:cron_override_image_url')
+    akari_publish(text, **params)
     return True
 
 
@@ -397,4 +397,7 @@ def akari_publish(text, **kwargs):
     from twitter import twitter
 
     akari = Akari(text, **kwargs)
-    twitter.post(status=akari.caption, media=akari.filename)
+    if cfg('twitter:text_in_status:bool'):
+        twitter.post(status=akari.caption, media=akari.filename)
+    else:
+        twitter.post(media=akari.filename)
