@@ -208,7 +208,9 @@ def memoize(name, timeout=30):
             if res:
                 try:
                     res = pickle.loads(res)
-                    logger.info('Returning object from cache: %s', key)
+                    logger.info('Returning object from cache: %s for "%s/%s"',
+                                key, _make_hashable(args),
+                                _make_hashable(kwargs))
                 except TypeError:
                     # this key got fucked up. remove it and pretend we didn't
                     # see it
