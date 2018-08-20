@@ -118,10 +118,6 @@ def process_mentions():
         if (sources_whitelist and status.source not in sources_whitelist):
             continue
 
-        text = utils.clean(status.text, urls=True, replies=True, rts=True)
-        if not text:
-            continue
-
         # store this status
         filtered_statuses.append(status)
 
