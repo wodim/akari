@@ -61,6 +61,14 @@ Every fifteen minutes, generate a new caption based on the last tweets.
 Those tweets are stored in pending.txt. The file is emptied once a new caption
 has been successfully published.
 
+*/1 * * * * import twitter_cron; twitter_cron.process_timeline()
+Several times a minute, scan the home timeline and save all tweets in
+pending.txt; those tweets are later scored and posted by akari_cron().
+
+*/1 * * * * import twitter_cron; twitter_cron.process_mentions()
+Several times a minute, review all mentions and generate new captions for
+eligible users.
+
 */5 * * * * import tasks; tasks.follow_my_followers()
 Every five minutes, check for new followers, and then follow them back.
 
@@ -75,7 +83,7 @@ Every three hours, retweet the promo tweet.
 Every night at 6:00, remove all temporary images. Images are *not* automatically
 removed after being posted.
 
-Also, you'll need a process control system that automatically launches both
-bots, deals with the logs, and re-launches the bots should they crash.
+Also, you'll need a process control system that automatically launches the
+Telegram bot, deals with the logs, and re-launches the bot should it crash.
 I use supervisord, for which I provide a supervisor.ini file you can drop in
 /etc/supervisor/conf.d/, but if you want you can also use upstart or systemd.

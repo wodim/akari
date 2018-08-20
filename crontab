@@ -1,5 +1,14 @@
-*/15 * * * * (cd akari_endlosung && nice -n18 python3 -c "from akari import akari_cron; akari_cron()" >> akari_post_cron.log 2>&1)
+# read the README to find out what these tasks do
+
+*/20 * * * * (cd akari_endlosung && nice -n18 python3 -c "from akari import akari_cron; akari_cron()" >> akari_post_cron.log 2>&1)
 */5 * * * * (cd akari_endlosung && nice -n18 python3 -c "import tasks; tasks.follow_my_followers()" >> akari_follow_cron.log 2>&1)
-0 */1 * * * (cd akari_endlosung && nice -n18 python3 -c "import tasks; tasks.unfollow_my_unfollowers()" >> akari_unfollow_cron.log 2>&1)
+0 5 * * * (cd akari_endlosung && nice -n18 python3 -c "import tasks; tasks.unfollow_my_unfollowers()" >> akari_unfollow_cron.log 2>&1)
 0 */3 * * * (cd akari_endlosung && nice -n18 python3 -c "import tasks; tasks.retweet_promo_tweet()" >> akari_promo_cron.log 2>&1)
-0 6 * * * find akari_endlosung/images -type f -delete ; find /tmp -type f -name 'magick-*' -delete
+52 6 * * * find akari_endlosung/images -type f -delete ; find /tmp -type f -name 'magick-*' -delete
+
+*/1 * * * * (cd akari_endlosung && nice -n18 python3 -c "import twitter_cron; twitter_cron.process_timeline()" >> akari_timeline_cron.log 2>&1)
+*/1 * * * * (cd akari_endlosung && sleep 30; nice -n18 python3 -c "import twitter_cron; twitter_cron.process_timeline()" >> akari_timeline_cron.log 2>&1)
+
+*/1 * * * * (cd akari_endlosung && nice -n18 python3 -c "import twitter_cron; twitter_cron.process_mentions()" >> akari_mentions_cron.log 2>&1)
+*/1 * * * * (cd akari_endlosung && sleep 20; nice -n18 python3 -c "import twitter_cron; twitter_cron.process_mentions()" >> akari_mentions_cron.log 2>&1)
+*/1 * * * * (cd akari_endlosung && sleep 40; nice -n18 python3 -c "import twitter_cron; twitter_cron.process_mentions()" >> akari_mentions_cron.log 2>&1)
