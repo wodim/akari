@@ -46,7 +46,7 @@ class Akari(object):
         self.caption_type = cfg('akari:caption_type')
 
         if image_url:
-            result = ImageSearchResult(image_url, 'overriden', 'overriden')
+            result = ImageSearchResult(image_url, 'overridden', 'overridden')
             results = [result]
         else:
             if self.override:

@@ -223,7 +223,7 @@ def memoize(name, timeout=30):
                 # not cached, we should calculate it.
                 res = func(*args, **kwargs)
                 db.server.set(key, pickle.dumps(res))
-                # ttl is set here so it cannot be overriden
+                # ttl is set here so it cannot be overridden
                 db.server.expire(key, timeout)
 
             return res
