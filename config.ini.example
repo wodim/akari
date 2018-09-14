@@ -98,6 +98,21 @@ text_in_status = yes
 ; processed by cron.
 process_threads = 3
 
+[tasks]
+; Accounts with more than this amount of friends will not be followed back.
+follow_max_friends = 5000
+
+; Accounts with fewer than this amount of followers will not be followed back.
+follow_min_followers = 50
+
+; Accounts that aren't configured to use a language on this list will not be
+; followed back. Important: languages here have to be in lowercase.
+follow_only_lang = en, en-gb
+
+; Accounts that haven't posted anything in the last `follow_last_post` days
+; will not be followed back.
+follow_last_post = 7
+
 [telegram]
 ; You can talk to the BotFather on Telegram to create an account for the bot.
 ; Once you've created it, you'll receive a token, which is what you need to put

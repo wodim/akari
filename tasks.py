@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import tweepy
 
 from config import cfg
@@ -53,11 +55,28 @@ def unfollow_spammers():
 
 def is_eligible(user):
     """checks if a user is eligible to be followed."""
-    if user.friends_count > 5000:
+    if (cfg('tasks:follow_max_friends:int') and
+            user.friends_count > cfg('tasks:follow_max_friends:int')):
+        utils.logger.info('@%s has too many friends: %d', user.screen_name,
+                          user.friends_count)
         return False
-    if (user.followers_count > 5000 and
-            user.friends_count / user.followers_count > 0.7):
+    if (cfg('tasks:follow_min_followers:int') and
+            user.followers_count < cfg('tasks:follow_min_followers:int')):
+        utils.logger.info('@%s has too few followers: %d', user.screen_name,
+                          user.followers_count)
         return False
+    if (cfg('tasks:follow_only_lang:list') and
+            user.lang.lower() not in cfg('tasks:follow_only_lang:list')):
+        utils.logger.info('@%s uses a language not in the whitelist: %s',
+                          user.screen_name, user.lang.lower())
+        return False
+    if cfg('tasks:follow_last_post_days:int') and hasattr(user, 'status'):
+        delta_min = (datetime.now() -
+                     timedelta(days=cfg('tasks:follow_last_post_days:int')))
+        if user.status.created_at < delta_min:
+            utils.logger.info('@%s has not posted anything for too long',
+                              user.screen_name)
+            return False
 
     return True
 
