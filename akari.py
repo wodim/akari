@@ -92,9 +92,9 @@ class Akari(object):
         """fill the image caches for each frame"""
         frames = cfg('akari:frames')
         if frames:
-            if not frames.endswith(os.sep):
-                frames += os.sep
             if os.path.isdir(frames):
+                if not frames.endswith(os.sep):
+                    frames += os.sep
                 frames = sorted([frames + x for x in os.listdir(frames)])
             else:
                 frames = [frames]
