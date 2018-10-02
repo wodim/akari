@@ -54,6 +54,9 @@ def google_image_search(text):
 
     results = []
     for result_json in results_json:
+        # ignore results that are taller than they are wide
+        if result_json['ow'] / result_json['oh'] < 1:
+            continue
         image_url = urllib.parse.unquote(result_json['ou'])
         results.append((image_url, result_json['ru']))
 
