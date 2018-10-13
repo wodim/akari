@@ -31,30 +31,34 @@ Installation
 ------------
 
 First: this bot works with Python 3 only. And the Telegram bot uses async,
-so it needs Python 3.5.
+so it needs Python 3.5. If you are not going to use the Telegram bot, then any
+version of Python 3 will be enough.
 
 There's a requirements.txt file, so to install the required modules from PyPI,
 you just need to:
 
 $ pip install -r requirements.txt
 
-In turn, you'll need imagemagick, and also a Redis server. The Redis server is
+In turn, you'll need imagemagick, and maybe a Redis server. The Redis server is
 used for rate limiting of requests and of "out of service" mails sent.
 
 Rate limits are important for the Telegram bot: on Twitter it's
 hard to spam the bot because Twitter itself will throttle you, but there's no
 limit in the amount of messages you can send to the bot on Telegram, so if you
 don't want to have Redis, you might as well not use the Telegram bot.
-Rate limits are also applied on Twitter, but they are much "softer".
-
 The Twitter bot also mails you in case it's failing to connect to Twitter,
 which happens when the account gets locked. Mails are rate limited, so Redis
-is necessary for this too.
+is necessary for this too. If you enable Mailgun and Redis is not working, you
+will receive an insane amount of mails.
+
+If you are not going to run the Telegram bot and you don't want to receive
+mails from the bot, then you can avoid Redis. Installing Redis is just one
+command and it requires no configuration, so it should not be a problem.
 
 You'll need to copy config.ini.example to config.ini and populate it, the
 settings are explained inside the file as comments.
 
-About the crontab:
+You will have to add a few tasks to the crontab. About them:
 
 */15 * * * * import akari; akari.akari_cron()
 Every fifteen minutes, generate a new caption based on the last tweets.
@@ -87,3 +91,5 @@ Also, you'll need a process control system that automatically launches the
 Telegram bot, deals with the logs, and re-launches the bot should it crash.
 I use supervisord, for which I provide a supervisor.ini file you can drop in
 /etc/supervisor/conf.d/, but if you want you can also use upstart or systemd.
+Once again, if you don't want to use the Telegram bot, you don't need to do
+this.
